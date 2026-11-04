@@ -1,61 +1,72 @@
-# REQUIREMENTS
+# REQUIREMENTS.md
 
-> Humans fill this in during the 9:00 to 9:30 planning. Agents read it and NEVER edit it.
-> Copy the statement's exact wording. Do not rename or reinterpret anything.
+## 1. Problem Understanding
 
-## 1. Problem statement (pasted verbatim)
+**Application name:**
 
-<paste the full statement here>
+**Problem being solved:**
 
-## 2. Product in one sentence
+**Target users:**
 
-For <who the user is>, <product name> <does what> so that <outcome>.
-
-## 3. Decisions
-
-- Persistence needed: YES | NO. Why: <one line>
-- AI feature: YES | NO. Feature: <name>. Fallback shown offline: <what the user sees>
-- Roles after rebalancing: A = <platform + which features>, B = <platform (if any) + which features>
-
-## 4. Requirements
-
-Status values: `todo`, `in progress`, `done (verified)`, `done (not verified)`.
-
-| ID | Requirement (exact wording from the statement) | Core / Nice | Feature | Builder (A/B) | Status |
-|----|----|----|----|----|----|
-| R1 | | Core | | | todo |
-| R2 | | Core | | | todo |
-
-## 5. Features (one folder each, name = folder name)
-
-| Feature | Pages / routes | Entities | R# served | Builder (A/B) |
-|----|----|----|----|----|
-| | | | | |
-
-## 6. Page routes (A builds the nav and one stub page per row)
-
-| Route | Feature | Nav label |
-|----|----|----|
-| / | home | |
-
-## 7. Data model (only if persistence = YES)
-
-Entity `<Name>`: `field: type (required | optional)`, ..., relations: `<Other> (1-to-many)`.
-
-Shared records created in `prisma/seed/00-core.ts`: <users, categories, lookups, or "none">
-
-## 8. Demo flows (3)
-
-1. <flow, with the R# it shows>
+**Core user journeys:**
+1.
 2.
 3.
 
-## 9. Cut list (we will NOT build)
+## 2. Requirements Backlog
 
-- 
+| ID | Requirement | Priority | Owner | Status |
+|---|---|---|---|---|
+| R1 | | P0 | A/B | Not started |
+| R2 | | P0 | A/B | Not started |
+| R3 | | P1 | A/B | Not started |
 
-## 10. Ambiguities
+Priority definitions:
+- P0: Essential to a complete core user journey.
+- P1: Important improvement to functionality or presentation.
+- P2: Optional enhancement.
 
-| Question | Asked to | Answer |
-|----|----|----|
-| | | |
+## 3. Feature Ownership
+
+### Agent A
+**Feature:**
+
+**Requirements owned:**
+
+**Dependencies:**
+
+**Expected user journey:**
+
+### Agent B
+**Feature:**
+
+**Requirements owned:**
+
+**Dependencies:**
+
+**Expected user journey:**
+
+## 4. Shared Contracts
+
+**Entities:**
+
+**API response conventions:**
+
+**Cross-feature dependencies:**
+
+**Shared files and their owners:**
+
+## 5. Milestones
+
+- [ ] Foundation working.
+- [ ] Shared contracts agreed.
+- [ ] First core user journey integrated.
+- [ ] All P0 requirements complete.
+- [ ] P1 requirements addressed.
+- [ ] Responsive design checked.
+- [ ] Final user journeys tested.
+- [ ] Demo prepared.
+
+## 6. Changes and Decisions
+
+Record important changes to requirements, priorities, ownership, and contracts here.

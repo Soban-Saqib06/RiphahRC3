@@ -284,7 +284,7 @@ NEVER commit unprompted. NEVER run: pull, push, fetch, merge, rebase, reset, che
 
 ## 10. Workflow
 
-10.1 Session start: read `RULES.md`, `docs/REQUIREMENTS.md`, `docs/API_CONTRACT.md` and `docs/DESIGN_BRIEF.md`. Read nothing else unless a task needs it. Reply in at most 5 lines: confirm your DEV and FEATURE, list the R# your feature serves, and name any file you will need that you do not own. Then wait for the first task.
+10.1 Session start: read `docs/RULES.md`, `docs/REQUIREMENTS.md`,`docs/AGENT_EXECUTION_PLAN.md` and `docs/DESIGN_BRIEF.md`. Read `docs/API_CONTRACT.md` if it exists. Read nothing else unless a task needs it. Reply in at most 5 lines: confirm your DEV and FEATURE, list the R# your feature serves, and name any file you will need that you do not own. Then wait for the first task.
 10.2 For each task:
 1. Restate it in at most 3 lines and name the R# it serves.
 2. List the files you will create or modify (paths), the routes you will add (6.1), any schema change (3.4) and any new dependencies (expected: none).
