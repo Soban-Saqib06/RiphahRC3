@@ -105,7 +105,7 @@ self.__SERVER_FILES_MANIFEST={
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "/home/shaaf/repos/RiphahRC3",
+    "outputFileTracingRoot": "/home/panda/Code/RiphahRC3",
     "enablePrerenderSourceMaps": true,
     "cacheComponents": true,
     "cacheLife": {
@@ -181,7 +181,7 @@ self.__SERVER_FILES_MANIFEST={
       "proxyPrefetch": "flexible",
       "optimisticClientCache": true,
       "manualClientBasePath": false,
-      "cpus": 3,
+      "cpus": 7,
       "memoryBasedWorkersCount": false,
       "imgOptConcurrency": null,
       "imgOptOperationCache": null,
@@ -345,12 +345,12 @@ self.__SERVER_FILES_MANIFEST={
           "as": "*.css"
         }
       },
-      "root": "/home/shaaf/repos/RiphahRC3"
+      "root": "/home/panda/Code/RiphahRC3"
     },
-    "repoRoot": "/home/shaaf/repos/RiphahRC3",
+    "repoRoot": "/home/panda/Code/RiphahRC3",
     "distDirRoot": ".next"
   },
-  "appDir": "/home/shaaf/repos/RiphahRC3",
+  "appDir": "/home/panda/Code/RiphahRC3",
   "relativeAppDir": "",
   "files": [
     ".next/package.json",

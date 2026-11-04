@@ -17,8 +17,8 @@ FEATURE: <the ONE feature folder name you are building now, e.g. bookings>
 ```
 
 - You build your FEATURE as a complete vertical slice: its page(s), its Route Handlers, its service, its zod schemas, its components and its seed data.
-- Platform ownership is separate from features. Dev A owns the app shell and design system. Dev B owns the database platform (schema, Prisma client, seed runner, API helpers). They are NOT your job unless the human grants permission (section 3).
-- Each human runs the app on their own laptop at `http://localhost:3000`.
+- Platform ownership is separate from features. Dev A owns the app shell and design system. Dev B owns the database platform (schema, Prisma client, seed runner, API helpers). They are NOT your job unless the human grants permission (section 3). The humans may rebalance these assignments after reading the problem statement; the assignment the human gives you at session start is authoritative.
+- The team has two laptops, one per human. Each human runs the app on their own laptop at `http://localhost:3000`.
 
 ---
 
@@ -26,7 +26,7 @@ FEATURE: <the ONE feature folder name you are building now, e.g. bookings>
 
 1.1 Confirmed by the official rules:
 - About 5 hours of building in two rounds (9:30 to 12:00, then 1:00 to 3:30), followed by on-the-spot evaluation and a live demo.
-- Teams of at most 2, each on their own laptop. Any technology stack is allowed. AI models are allowed.
+- Teams of at most 2, and participants bring their own laptops. Any technology stack is allowed. AI models are allowed.
 - Submissions include all source code and assets, delivered through a platform or USB.
 - Solutions are checked against test cases from the problem statement and must cover functionality, aesthetics and responsiveness.
 - Scoring: Functionality 40%, Design 30%, Creativity 20%, Presentation 10%.
@@ -55,7 +55,7 @@ If time runs short, cut from the bottom of this list. Never compromise the core 
 
 2.1 Build ONE Next.js App Router application in ONE Git repository. NEVER create a separate frontend app, backend app, second package install, or microservice.
 - One `package.json` and one lockfile
-- One Prisma schema and one Prisma client singleton (`src/lib/db.ts`)
+- One Prisma schema and one Prisma client singleton (`src/lib/db.ts`), only if the task needs persistence (see 7.1)
 - One root layout and one global stylesheet
 - One design system
 - One integrated `main` branch
@@ -84,7 +84,7 @@ src/lib/features/<feature>/service.ts           business logic and queries
 src/lib/features/<feature>/schema.ts            zod schemas
 prisma/schema.prisma                            (Dev B)
 prisma/seed.ts                                  runs every file in prisma/seed/ (Dev B)
-prisma/seed/<feature>.ts                        one seed file per feature
+prisma/seed/<feature>.ts                        one seed file per feature (runs after prisma/seed/00-core.ts, Dev B)
 docs/REQUIREMENTS.md, API_CONTRACT.md, DESIGN_BRIEF.md
 ```
 
@@ -108,7 +108,7 @@ prisma/seed/<FEATURE>.ts
 | Area | Owner |
 |---|---|
 | Root layout, app shell, navigation, `globals.css`, design tokens, `src/components/shared/**` | Dev A |
-| `prisma/schema.prisma`, `src/lib/db.ts`, `src/lib/api.ts`, `prisma/seed.ts` (the runner) | Dev B |
+| `prisma/schema.prisma`, `src/lib/db.ts`, `src/lib/api.ts`, `prisma/seed.ts` (the runner), `prisma/seed/00-core.ts` (shared records) | Dev B |
 | Another feature's paths | That feature's agent |
 | `docs/**` | Humans |
 | `package.json`, lockfile, `next.config.*`, `tsconfig.json`, Tailwind/PostCSS config, `.gitignore`, `.env.example`, `README.md` | Humans |
@@ -116,7 +116,10 @@ prisma/seed/<FEATURE>.ts
 
 3.3 NEVER edit a file you do not own. Tell the human the exact change and why, and keep working on what you own. The only exception is explicit one-time permission from the human that names the file (for example "you may edit prisma/schema.prisma for this task"). Permission covers only that file and that task.
 
-3.4 Schema: edit `prisma/schema.prisma` ONLY with explicit permission (3.3), and ONLY additively: new models, new optional fields, new relations. NEVER rename, retype or delete an existing model or field. Put the exact change in your plan first. After a schema change, tell the human that the other developer must pull and run `npm run setup`.
+3.4 Schema: edit `prisma/schema.prisma` ONLY with explicit permission (3.3).
+- During the foundation phase (until the humans say "foundation complete"), the agent Dev B assigns to the schema may restructure it freely.
+- After that, every change needs permission, and its exact content goes in your plan first. Prefer additive changes (new models, optional fields, relations). Renaming, retyping or deleting an existing model or field is allowed only when the human confirms that both developers agree, because other features depend on it.
+- After any schema change, tell the human that the other developer must pull and run `npm run setup`.
 
 3.5 Navigation: Dev A has already linked every planned feature route and created a stub page for each. Fill in your stub. If you need a route or nav link that does not exist, ask the human.
 
@@ -202,7 +205,7 @@ NEVER commit unprompted. NEVER run: pull, push, fetch, merge, rebase, reset, che
 
 ## 6. API contracts
 
-6.1 Your FEATURE's own routes: before coding, list each one in your plan (method and URL, request body/params/query, validation rules, success shape, error shape, status codes). After the human replies APPROVED, implement exactly that. Report the final routes in your handoff (10.9). The humans copy them into `docs/API_CONTRACT.md`. You NEVER edit `docs/`.
+6.1 Your FEATURE's own new routes need NO approval. Before coding, list each one in your plan (method and URL, request body/params/query, validation rules, success shape, error shape, status codes), then implement exactly that and proceed. Report the final routes in your handoff (10.9). The humans copy them into `docs/API_CONTRACT.md`. You NEVER edit `docs/`. Approval is required only to change an existing documented route (6.4).
 6.2 Response convention. Use it everywhere, through the helpers in `src/lib/api.ts` if they exist, with correct HTTP status codes. Never HTTP 200 for a failure.
 ```json
 { "success": true, "data": {} }
@@ -216,9 +219,12 @@ NEVER commit unprompted. NEVER run: pull, push, fetch, merge, rebase, reset, che
 
 ## 7. Data and the AI feature
 
-7.1 Database: SQLite through Prisma, with appropriate relations and constraints. Schema changes follow 3.4.
+7.1 Persistence is set up only if the humans decided in planning that the task needs it (see `docs/REQUIREMENTS.md`). If it does: SQLite through Prisma, with appropriate relations and constraints, and schema changes follow 3.4. If it does not, there is NO database: do not create Prisma code, seed files or API routes the requirements do not need, and keep feature data static or in memory.
 7.2 `package.json` has `setup` (push schema, then seed) and `seed` scripts. They are set up by the humans at the start.
-7.3 Seed data: add ONE file, `prisma/seed/<FEATURE>.ts`, with a default-exported async function that creates the data for your feature's own tables. It is idempotent: it clears only your feature's tables and re-inserts. The runner `prisma/seed.ts` executes every file in `prisma/seed/` in alphabetical order, so you NEVER edit the runner. If you need rows from another feature's tables, STOP and ask.
+7.3 Seed data. The runner `prisma/seed.ts` executes `prisma/seed/00-core.ts` FIRST, then every other file in `prisma/seed/` in alphabetical order. You NEVER edit the runner or `00-core.ts` (Dev B owns both).
+- `00-core.ts` creates records that several features share (for example users, categories, lookup values).
+- Add ONE file, `prisma/seed/<FEATURE>.ts`, with a default-exported async function that creates the data for your feature's own tables. It is idempotent: it clears only your feature's tables and re-inserts.
+- Your seed may reference records created by `00-core.ts`. It MUST NOT depend on another feature's tables. If you need a shared record that `00-core.ts` does not create, or rows from another feature, STOP and ask.
 7.4 Seed data is realistic and specific to the task: plausible names, dates, prices and descriptions; 10 to 20 records per primary entity; one or two edge cases (very long text, an empty relation). NEVER use "Test", "foo", "John Doe", "Acme", "User 1" or lorem ipsum.
 7.5 The app MUST render correctly on an empty database (empty states) and after a reseed without a restart. Local database files are NOT committed and are NOT synchronized through Git.
 7.6 AI feature. The humans want ONE AI feature if the problem statement gives it a natural place. Build it only inside a feature the human assigns it to, only after that feature's core journey works, and only when the human approves the specific idea. When you build it:
@@ -250,7 +256,7 @@ NEVER commit unprompted. NEVER run: pull, push, fetch, merge, rebase, reset, che
 ## 9. Design and uniqueness (applies to every agent that writes UI)
 
 9.1 Source of truth: `docs/DESIGN_BRIEF.md`, with tokens defined once in `src/app/globals.css` and shared components in `src/components/shared/` (all Dev A's). Where the brief states something explicitly, the brief wins over everything in this section. USE the shared components and tokens. NEVER add global CSS, a competing theme, a second font, or hardcoded hex or pixel values in components: use tokens through Tailwind theme classes. If a shared component or token is missing, ask the human (3.3). Your feature must look like the same site as every other feature.
-9.2 Before writing UI for your feature, output a design plan of at most 10 lines: which shared components and tokens you will use, the layout concept with one ASCII wireframe per distinct page layout, and what is distinctive about this page's content. Then ask: "What would a default AI output for this page look like?" Revise whatever matches it, state the change in one line, and only then write code.
+9.2 Once per feature (not once per task), before writing its first UI, output a design plan of at most 10 lines: which shared components and tokens you will use, the layout concept with one ASCII wireframe per distinct page layout, and what is distinctive about this page's content. Then ask: "What would a default AI output for this page look like?" Revise whatever matches it, state the change in one line, and only then write code.
 9.3 Typography: only the brief's fonts, through the existing setup. A type scale of at most 6 sizes. Line length under 80 characters. Headlines are an active design element, not a neutral container.
 9.4 Layout: vary the layout between sections. NO repeated "three equal cards in a row". Do NOT apply one uniform radius and one soft grey shadow to everything: vary radius and elevation by hierarchy. Borders, dividers, labels and numbering MUST carry real information, not decorate.
 9.5 Hero and page openings: open with the most characteristic thing in the subject's world (real content, a live interactive element, striking type, a working demo). NOT a generic headline, subtext, two buttons and a stat row.
