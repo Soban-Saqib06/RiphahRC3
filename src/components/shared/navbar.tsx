@@ -71,7 +71,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
         {/* Brand Logo */}
         <div className="flex items-center gap-8">
           <Link
-            href={user ? "/dashboard" : "/"}
+            href="/"
             className="group flex items-center gap-2.5 transition-opacity hover:opacity-90"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#D97745] text-white shadow-sm">
