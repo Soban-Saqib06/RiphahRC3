@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { ok, handleError, AppError } from "@/lib/api";
-import { prisma } from "@/lib/db";
-import { parseStoredResume, toResumeDTO } from "@/lib/features/resumes/service";
+import { ok, handleError } from "@/lib/api";
+import { parseStoredResume } from "@/lib/features/resumes/service";
+
+export const runtime = "nodejs";
 
 export async function POST(
-  req: NextRequest,
+  _request: NextRequest,
   context: { params: Promise<{ resumeId: string }> }
 ) {
   try {
@@ -13,19 +14,9 @@ export async function POST(
     if (!auth.ok) return auth.response;
 
     const { resumeId } = await context.params;
-
-    const resume = await prisma.resume.findUnique({
-      where: { id: resumeId },
-      include: { candidate: true },
-    });
-
-    if (!resume || resume.candidate.userId !== auth.user.id) {
-      throw new AppError("NOT_FOUND", "Resume not found.", 404);
-    }
-
-    const updated = await parseStoredResume(resumeId);
-    return ok({ resume: updated });
-  } catch (err) {
-    return handleError(err);
+    const resume = await parseStoredResume(resumeId, auth.user.id);
+    return ok({ resume });
+  } catch (error) {
+    return handleError(error);
   }
 }

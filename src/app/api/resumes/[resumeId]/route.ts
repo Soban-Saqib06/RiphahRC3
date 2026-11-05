@@ -2,13 +2,15 @@ import { NextRequest } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { ok, handleError } from "@/lib/api";
 import {
-  getResumeForUser,
-  updateCandidateResumeParsedData,
+  getResumeById,
+  updateParsedResume,
 } from "@/lib/features/resumes/service";
-import { PatchResumeSchema } from "@/lib/features/resumes/schema";
+import { UpdateParsedResumeSchema } from "@/lib/features/resumes/schema";
+
+export const runtime = "nodejs";
 
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ resumeId: string }> }
 ) {
   try {
@@ -16,18 +18,17 @@ export async function GET(
     if (!auth.ok) return auth.response;
 
     const { resumeId } = await context.params;
-    const { searchParams } = new URL(req.url);
-    const includeText = searchParams.get("includeText") === "true";
+    const includeText = request.nextUrl.searchParams.get("includeText") === "true";
 
-    const resume = await getResumeForUser(resumeId, auth.user, includeText);
+    const resume = await getResumeById(resumeId, auth.user, includeText);
     return ok({ resume });
-  } catch (err) {
-    return handleError(err);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function PATCH(
-  req: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ resumeId: string }> }
 ) {
   try {
@@ -35,17 +36,12 @@ export async function PATCH(
     if (!auth.ok) return auth.response;
 
     const { resumeId } = await context.params;
-    const json = await req.json();
-    const validated = PatchResumeSchema.parse(json);
+    const body = await request.json();
+    const { parsedData } = UpdateParsedResumeSchema.parse(body);
 
-    const resume = await updateCandidateResumeParsedData(
-      resumeId,
-      auth.user.id,
-      validated.parsedData
-    );
-
+    const resume = await updateParsedResume(resumeId, auth.user.id, parsedData);
     return ok({ resume });
-  } catch (err) {
-    return handleError(err);
+  } catch (error) {
+    return handleError(error);
   }
 }

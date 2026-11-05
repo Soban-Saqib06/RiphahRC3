@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, X, ArrowLeft, Check, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
 import { PageHeader } from "@/components/shared/page-header";
+import type { SkillPriority, UserDTO } from "@/lib/dto";
 
 export default function NewJobPage() {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<UserDTO | null>(null);
+
   const [title, setTitle] = useState("Senior Backend Developer");
   const [department, setDepartment] = useState("Engineering");
   const [location, setLocation] = useState("Lahore (Hybrid)");
@@ -24,28 +27,67 @@ export default function NewJobPage() {
     "We are seeking an experienced Backend Developer to design, scale, and maintain our high-throughput distributed APIs. You will work closely with frontend and platform teams to build resilient microservices."
   );
 
-  const [skills, setSkills] = useState([
-    { name: "Python", priority: "REQUIRED", importance: 5 },
-    { name: "Django", priority: "REQUIRED", importance: 5 },
-    { name: "PostgreSQL", priority: "REQUIRED", importance: 4 },
-    { name: "Docker", priority: "REQUIRED", importance: 3 },
+  const [skills, setSkills] = useState<{ name: string; priority: SkillPriority; importance: number }[]>([
+    { name: "Python", priority: "REQUIRED" as const, importance: 5 },
+    { name: "Django", priority: "REQUIRED" as const, importance: 5 },
+    { name: "PostgreSQL", priority: "REQUIRED" as const, importance: 4 },
+    { name: "Docker", priority: "REQUIRED" as const, importance: 3 },
   ]);
 
   const [newSkillName, setNewSkillName] = useState("");
+  const [newSkillPriority, setNewSkillPriority] = useState<"REQUIRED" | "PREFERRED">("REQUIRED");
+  const [newSkillImportance, setNewSkillImportance] = useState(4);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.success) {
+          if (json.data.user.role !== "RECRUITER") {
+            router.push("/jobs");
+          } else {
+            setCurrentUser(json.data.user);
+          }
+        } else {
+          router.push("/auth/login");
+        }
+      })
+      .catch(() => {});
+  }, [router]);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/auth/login");
+  };
+
   const addSkill = () => {
     if (!newSkillName.trim()) return;
+    if (skills.some((s) => s.name.toLowerCase() === newSkillName.trim().toLowerCase())) {
+      setError(`Skill "${newSkillName.trim()}" already exists.`);
+      return;
+    }
     setSkills([
       ...skills,
-      { name: newSkillName.trim(), priority: "REQUIRED", importance: 4 },
+      {
+        name: newSkillName.trim(),
+        priority: newSkillPriority,
+        importance: newSkillImportance,
+      },
     ]);
     setNewSkillName("");
+    setError(null);
   };
 
   const removeSkill = (index: number) => {
     setSkills(skills.filter((_, i) => i !== index));
+  };
+
+  const updateSkill = (index: number, field: "priority" | "importance", value: any) => {
+    const updated = [...skills];
+    updated[index] = { ...updated[index], [field]: value };
+    setSkills(updated);
   };
 
   const handleSave = async (status: "DRAFT" | "OPEN") => {
@@ -61,8 +103,8 @@ export default function NewJobPage() {
           department,
           location,
           employmentType,
-          salaryMin: Number(salaryMin),
-          salaryMax: Number(salaryMax),
+          salaryMin: salaryMin ? Number(salaryMin) : null,
+          salaryMax: salaryMax ? Number(salaryMax) : null,
           salaryCurrency: "PKR",
           description,
           minYearsExperience: Number(minYearsExperience),
@@ -87,14 +129,7 @@ export default function NewJobPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F2EC]">
-      <Navbar
-        user={{
-          id: "recruiter-maya",
-          name: "Maya Hartwell",
-          email: "recruiter@demo.example",
-          role: "RECRUITER",
-        }}
-      />
+      <Navbar user={currentUser} onLogout={handleLogout} />
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
@@ -109,7 +144,7 @@ export default function NewJobPage() {
                 type="button"
                 onClick={() => handleSave("DRAFT")}
                 disabled={loading}
-                className="rounded-md border border-[#CDC7BD] bg-white px-4 py-2 text-xs font-semibold text-[#242522] hover:bg-[#FAF8F5] transition-colors"
+                className="rounded-md border border-[#CDC7BD] bg-white px-4 py-2 text-xs font-semibold text-[#242522] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
               >
                 Save Draft
               </button>
@@ -117,7 +152,7 @@ export default function NewJobPage() {
                 type="button"
                 onClick={() => handleSave("OPEN")}
                 disabled={loading}
-                className="rounded-md bg-[#D97745] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#C46332] transition-colors"
+                className="rounded-md bg-[#D97745] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#C46332] transition-colors cursor-pointer"
               >
                 {loading ? "Publishing..." : "Publish Vacancy"}
               </button>
@@ -126,53 +161,17 @@ export default function NewJobPage() {
         />
 
         {error && (
-          <div className="mb-6 rounded-lg border border-[#EFC6C3] bg-[#F8ECEB] p-4 text-xs text-[#BA3D35]">
+          <div className="mb-6 rounded-xl border border-[#EFC6C3] bg-[#F8ECEB] p-4 text-xs text-[#BA3D35]">
             {error}
           </div>
         )}
 
-        {/* 3-Column Layout Matching Wireframe R03 */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Stepper (2 cols) */}
-          <div className="lg:col-span-3 space-y-4">
-            <div className="rounded-2xl border border-[#E2DDD5] bg-white p-5 shadow-xs">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#77776E] mb-4">
-                Creation Steps
-              </p>
-              <ul className="space-y-4 text-xs font-semibold">
-                <li className="flex items-center gap-2.5 text-[#D97745]">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#D97745] text-white text-xs">
-                    1
-                  </span>
-                  <span>Job Basics</span>
-                </li>
-                <li className="flex items-center gap-2.5 text-[#242522]">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#E2DDD5] bg-[#FAF8F5] text-xs text-[#77776E]">
-                    2
-                  </span>
-                  <span>Required Skills</span>
-                </li>
-                <li className="flex items-center gap-2.5 text-[#77776E]">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#E2DDD5] bg-[#FAF8F5] text-xs">
-                    3
-                  </span>
-                  <span>Qualifications</span>
-                </li>
-                <li className="flex items-center gap-2.5 text-[#77776E]">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#E2DDD5] bg-[#FAF8F5] text-xs">
-                    4
-                  </span>
-                  <span>AI Matching Criteria</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Middle Form (6 cols) */}
-          <div className="lg:col-span-5 space-y-6">
+          {/* Left Form: Details (8 cols) */}
+          <div className="lg:col-span-8 space-y-6">
             <div className="rounded-2xl border border-[#E2DDD5] bg-white p-6 shadow-xs space-y-4">
               <h2 className="text-base font-bold text-[#242522] border-b border-[#E2DDD5] pb-3">
-                1. Job Basics
+                1. Requisition Details
               </h2>
 
               <div>
@@ -181,19 +180,21 @@ export default function NewJobPage() {
                 </label>
                 <input
                   type="text"
+                  required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full rounded-md border border-[#E2DDD5] bg-white px-3 py-2 text-sm text-[#242522] focus:border-[#D97745] focus:outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#242522] mb-1">
                     Department *
                   </label>
                   <input
                     type="text"
+                    required
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     className="w-full rounded-md border border-[#E2DDD5] bg-white px-3 py-2 text-sm text-[#242522] focus:border-[#D97745] focus:outline-none"
@@ -205,6 +206,7 @@ export default function NewJobPage() {
                   </label>
                   <input
                     type="text"
+                    required
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     className="w-full rounded-md border border-[#E2DDD5] bg-white px-3 py-2 text-sm text-[#242522] focus:border-[#D97745] focus:outline-none"
@@ -212,7 +214,7 @@ export default function NewJobPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#242522] mb-1">
                     Employment Type
@@ -230,12 +232,48 @@ export default function NewJobPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#242522] mb-1">
+                    Min Salary (PKR)
+                  </label>
+                  <input
+                    type="number"
+                    value={salaryMin}
+                    onChange={(e) => setSalaryMin(e.target.value)}
+                    className="w-full rounded-md border border-[#E2DDD5] bg-white px-3 py-2 text-sm text-[#242522] focus:border-[#D97745] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#242522] mb-1">
+                    Max Salary (PKR)
+                  </label>
+                  <input
+                    type="number"
+                    value={salaryMax}
+                    onChange={(e) => setSalaryMax(e.target.value)}
+                    className="w-full rounded-md border border-[#E2DDD5] bg-white px-3 py-2 text-sm text-[#242522] focus:border-[#D97745] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#242522] mb-1">
                     Min Years Experience
                   </label>
                   <input
                     type="number"
                     value={minYearsExperience}
                     onChange={(e) => setMinYearsExperience(Number(e.target.value))}
+                    className="w-full rounded-md border border-[#E2DDD5] bg-white px-3 py-2 text-sm text-[#242522] focus:border-[#D97745] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#242522] mb-1">
+                    Qualifications
+                  </label>
+                  <input
+                    type="text"
+                    value={requiredQualifications}
+                    onChange={(e) => setRequiredQualifications(e.target.value)}
                     className="w-full rounded-md border border-[#E2DDD5] bg-white px-3 py-2 text-sm text-[#242522] focus:border-[#D97745] focus:outline-none"
                   />
                 </div>
@@ -257,100 +295,93 @@ export default function NewJobPage() {
 
           {/* Right Skills & AI Matching Criteria (4 cols) */}
           <div className="lg:col-span-4 space-y-6">
-            {/* 2. Required Skills Card matching wireframe R03 */}
             <div className="rounded-2xl border border-[#E2DDD5] bg-white p-6 shadow-xs space-y-4">
               <h2 className="text-base font-bold text-[#242522] border-b border-[#E2DDD5] pb-3">
-                2. Required Skills
+                2. Required Skills & Importance
               </h2>
+              <p className="text-xs text-[#77776E]">
+                Skills configured here drive the AI candidate match scoring (weight 50%).
+              </p>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-2.5">
                 {skills.map((s, idx) => (
-                  <span
+                  <div
                     key={s.name}
-                    className="inline-flex items-center gap-1 rounded-full bg-[#F9ECE5] border border-[#ECC9B6] px-3 py-1 text-xs font-bold text-[#D97745]"
+                    className="flex items-center justify-between rounded-lg border border-[#E2DDD5] bg-[#FAF8F5] p-2.5 text-xs"
                   >
-                    <span>{s.name}</span>
+                    <div>
+                      <span className="font-bold text-[#242522] block">{s.name}</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <select
+                          value={s.priority}
+                          onChange={(e) => updateSkill(idx, "priority", e.target.value)}
+                          className="rounded border border-[#E2DDD5] bg-white px-1.5 py-0.5 text-[10px]"
+                        >
+                          <option value="REQUIRED">Required</option>
+                          <option value="PREFERRED">Preferred</option>
+                        </select>
+                        <select
+                          value={s.importance}
+                          onChange={(e) => updateSkill(idx, "importance", Number(e.target.value))}
+                          className="rounded border border-[#E2DDD5] bg-white px-1.5 py-0.5 text-[10px]"
+                        >
+                          <option value={5}>Priority 5 (Highest)</option>
+                          <option value={4}>Priority 4</option>
+                          <option value={3}>Priority 3</option>
+                          <option value={2}>Priority 2</option>
+                          <option value={1}>Priority 1 (Minor)</option>
+                        </select>
+                      </div>
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeSkill(idx)}
-                      className="hover:text-[#BA3D35]"
+                      className="text-[#77776E] hover:text-[#BA3D35] p-1"
+                      title="Remove skill"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </button>
-                  </span>
+                  </div>
                 ))}
               </div>
 
-              <div className="flex gap-2 pt-2">
+              {/* Add Skill row */}
+              <div className="pt-2 border-t border-[#E2DDD5] space-y-2">
                 <input
                   type="text"
                   value={newSkillName}
                   onChange={(e) => setNewSkillName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSkill())}
-                  placeholder="Add skill (e.g. Redis)..."
-                  className="flex-1 rounded-md border border-[#E2DDD5] bg-white px-3 py-1.5 text-xs text-[#242522] focus:border-[#D97745] focus:outline-none"
+                  placeholder="New skill (e.g. Redis)..."
+                  className="w-full rounded-md border border-[#E2DDD5] bg-white px-3 py-1.5 text-xs text-[#242522] focus:border-[#D97745] focus:outline-none"
                 />
-                <button
-                  type="button"
-                  onClick={addSkill}
-                  className="rounded-md bg-[#D97745] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#C46332]"
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-
-            {/* 4. AI Matching Criteria Weights per DATA_MODEL.md & wireframe R03 */}
-            <div className="rounded-2xl border border-[#ECC9B6] bg-[#F9ECE5]/50 p-6 shadow-xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-[#ECC9B6]/60 pb-3">
-                <Sparkles className="h-4 w-4 text-[#D97745]" />
-                <h3 className="text-sm font-bold text-[#242522]">
-                  4. AI Matching Rubric
-                </h3>
-              </div>
-              <p className="text-xs text-[#77776E]">
-                Weighted multi-dimensional scoring enforced per academic competition baseline:
-              </p>
-
-              <div className="space-y-3 text-xs">
-                <div>
-                  <div className="flex justify-between font-semibold text-[#242522] mb-1">
-                    <span>Skills Assessment</span>
-                    <span className="text-[#D97745] font-bold">50%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
-                    <div className="h-full bg-[#D97745] w-1/2 rounded-full" />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between font-semibold text-[#242522] mb-1">
-                    <span>Experience Relevance</span>
-                    <span className="text-[#D97745] font-bold">25%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
-                    <div className="h-full bg-[#D97745] w-1/4 rounded-full" />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between font-semibold text-[#242522] mb-1">
-                    <span>Project Relevance</span>
-                    <span className="text-[#D97745] font-bold">15%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
-                    <div className="h-full bg-[#D97745] w-[15%] rounded-full" />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between font-semibold text-[#242522] mb-1">
-                    <span>Qualifications</span>
-                    <span className="text-[#D97745] font-bold">10%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
-                    <div className="h-full bg-[#D97745] w-[10%] rounded-full" />
-                  </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={newSkillPriority}
+                    onChange={(e) => setNewSkillPriority(e.target.value as any)}
+                    className="flex-1 rounded-md border border-[#E2DDD5] bg-white px-2 py-1 text-xs text-[#242522]"
+                  >
+                    <option value="REQUIRED">Required</option>
+                    <option value="PREFERRED">Preferred</option>
+                  </select>
+                  <select
+                    value={newSkillImportance}
+                    onChange={(e) => setNewSkillImportance(Number(e.target.value))}
+                    className="flex-1 rounded-md border border-[#E2DDD5] bg-white px-2 py-1 text-xs text-[#242522]"
+                  >
+                    <option value={5}>Importance: 5</option>
+                    <option value={4}>Importance: 4</option>
+                    <option value={3}>Importance: 3</option>
+                    <option value={2}>Importance: 2</option>
+                    <option value={1}>Importance: 1</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={addSkill}
+                    className="rounded-md bg-[#D97745] px-3 py-1 text-xs font-bold text-white hover:bg-[#C46332] cursor-pointer"
+                  >
+                    Add
+                  </button>
                 </div>
               </div>
             </div>
