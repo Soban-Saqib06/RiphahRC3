@@ -5,6 +5,7 @@ import {
   CandidateApplicationDTO,
   ApplicationSummaryDTO,
   ApplicationDetailDTO,
+  StatusEventDTO,
   UserDTO,
 } from "@/lib/dto";
 import { CreateApplicationInput } from "./schema";
@@ -182,6 +183,14 @@ export async function transitionStatus(
         status: toStatus as any,
         statusUpdatedAt: now,
       },
+      include: {
+        candidate: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+        },
+        assessment: true,
+      },
     });
 
     const statusEvent = await tx.applicationStatusEvent.create({
@@ -200,6 +209,46 @@ export async function transitionStatus(
 
     return { application: updated, statusEvent };
   });
+}
+
+/**
+ * Format ApplicationStatusEvent into StatusEventDTO.
+ */
+export function toStatusEventDTO(event: any): StatusEventDTO {
+  return {
+    id: event.id,
+    fromStatus: event.fromStatus || null,
+    toStatus: event.toStatus,
+    note: event.note || null,
+    changedBy: event.changedBy
+      ? { id: event.changedBy.id, name: event.changedBy.name }
+      : null,
+    createdAt: new Date(event.createdAt).toISOString(),
+  };
+}
+
+/**
+ * Update recruiter private notes on an application.
+ */
+export async function updateRecruiterNotes(
+  applicationId: string,
+  recruiterNotes: string | null
+): Promise<{ id: string; recruiterNotes: string | null }> {
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+  });
+
+  if (!application) {
+    throw new AppError("NOT_FOUND", "Application not found.", 404);
+  }
+
+  const updated = await prisma.application.update({
+    where: { id: applicationId },
+    data: { recruiterNotes },
+    select: { id: true, recruiterNotes: true },
+  });
+
+  return updated;
 }
 
 /**

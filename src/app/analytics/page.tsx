@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock,
@@ -296,7 +296,7 @@ function AnalyticsPageContent() {
 
 export default function AnalyticsPage() {
   return (
-    <React.Suspense
+    <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-[#F5F2EC]">
           <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#D97745] border-t-transparent" />
@@ -304,6 +304,6 @@ export default function AnalyticsPage() {
       }
     >
       <AnalyticsPageContent />
-    </React.Suspense>
+    </Suspense>
   );
 }

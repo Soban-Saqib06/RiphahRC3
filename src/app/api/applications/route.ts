@@ -10,7 +10,6 @@ import {
 } from "@/lib/features/applications/service";
 import { ApplicationStatus } from "@/lib/dto";
 
-
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireUser(["CANDIDATE"]);

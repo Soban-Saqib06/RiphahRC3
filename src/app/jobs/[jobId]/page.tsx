@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -23,7 +23,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ApplyModal } from "@/components/candidate/apply-modal";
 import type { JobDetailDTO, UserDTO } from "@/lib/dto";
 
-function JobDetailPageContent() {
+function JobDetailContent() {
   const router = useRouter();
   const params = useParams();
   const jobId = params?.jobId as string;
@@ -385,14 +385,14 @@ function JobDetailPageContent() {
 
 export default function JobDetailPage() {
   return (
-    <React.Suspense
+    <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-[#F5F2EC]">
           <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#D97745] border-t-transparent" />
         </div>
       }
     >
-      <JobDetailPageContent />
-    </React.Suspense>
+      <JobDetailContent />
+    </Suspense>
   );
 }
