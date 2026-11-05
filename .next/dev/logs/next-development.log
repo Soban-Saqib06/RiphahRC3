@@ -1,4 +1,8 @@
-{"timestamp":"00:00:01.245","source":"Server","level":"LOG","message":"- Cache Components enabled"}
-{"timestamp":"00:00:01.245","source":"Server","level":"LOG","message":"- Partial Prefetching enabled"}
-{"timestamp":"00:00:01.245","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:33.972","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
+{"timestamp":"00:00:08.902","source":"Server","level":"WARN","message":"⚠ Slow filesystem detected. The benchmark took 519ms. If /home/shaaf/repos/RiphahRC3/.next/dev is a network drive, consider moving it to a local folder.\nSee more: https://nextjs.org/docs/app/guides/local-development"}
+{"timestamp":"00:00:09.784","source":"Server","level":"LOG","message":"- Cache Components enabled"}
+{"timestamp":"00:00:09.785","source":"Server","level":"LOG","message":"- Partial Prefetching enabled"}
+{"timestamp":"00:00:09.785","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:12.814","source":"Server","level":"LOG","message":"○ Compiling / ..."}
+{"timestamp":"00:00:34.800","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
+{"timestamp":"00:02:47.022","source":"Server","level":"LOG","message":"✓ Compiled in 370ms"}
+{"timestamp":"00:12:11.068","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}

@@ -54,8 +54,8 @@ export default function JobDetailPage() {
     requiredQualifications:
       "Bachelor's degree in Computer Science, Software Engineering or equivalent experience.",
     applicantCount: 3,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: "2026-11-01T09:00:00.000Z",
+    updatedAt: "2026-11-01T09:00:00.000Z",
     closedAt: null,
     recruiter: { id: "recruiter-maya", name: "Maya Hartwell" },
     skills: [

@@ -22,7 +22,7 @@ export function Footer() {
               Evidence-based evaluation with full human decision control.
             </p>
             <div className="pt-2 text-xs text-[#77776E]">
-              &copy; {new Date().getFullYear()} TalentPilot Systems. Academic Prototype.
+              &copy; 2026 TalentPilot Systems. Academic Prototype.
             </div>
           </div>
 

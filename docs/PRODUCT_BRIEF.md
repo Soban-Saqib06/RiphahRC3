@@ -97,67 +97,67 @@ decisions autonomously.
 
 ### 7.1 Included Features
 
-  -----------------------------------------------------------------------
-  Feature                 MVP scope               Priority
-  ----------------------- ----------------------- -----------------------
-  Authentication and      Basic functional        High
+  -----------------------------------------------------------------------------------------------
+  Feature                 MVP scope               Priority                 Owner
+  ----------------------- ----------------------- ----------------------- -----------------------
+ 1. Authentication and      Basic functional        High                   B
   roles                   registration/login for  
                           recruiter and candidate 
                           roles; role-aware       
                           access                  
 
-  Recruiter dashboard     Key recruitment KPIs,   High
+ 2. Recruiter dashboard     Key recruitment KPIs,   High                   A
                           vacancies, application  
                           pipeline and interview  
                           overview                
 
-  Job management          Create and manage       High
+ 3. Job management          Create and manage       High                   A
                           vacancies with core job 
                           requirements            
 
-  Candidate portal        Basic profile, PDF      Medium
+ 4. Candidate portal        Basic profile, PDF      Medium                 B
                           resume upload, job      
                           browsing, applications  
                           and status tracking     
 
-  Resume parsing          Extract PDF text and    High
+ 5. Resume parsing          Extract PDF text and    High
                           structure relevant      
                           candidate information   
 
-  AI candidate matching   Compare candidate       Critical
+ 6. AI candidate matching   Compare candidate       Critical
                           evidence with vacancy   
                           requirements and        
                           provide an explainable  
                           score                   
 
-  Candidate review        View candidate details, High
+ 7. Candidate review        View candidate details, High
                           evidence, gaps and      
                           application information 
 
-  Candidate comparison    Basic side-by-side      High
+ 8. Candidate comparison    Basic side-by-side      High
                           comparison of selected  
                           applicants              
 
-  Application decisions   Recruiter can shortlist High
+ 9. Application decisions   Recruiter can shortlist High
                           or reject applicants;   
                           maintain visible        
                           application status      
 
-  Interview questions     Generate role-specific  Medium
+ 10. Interview questions     Generate role-specific  Medium
                           questions using Gemini; 
                           allow basic editing     
 
-  Interview scheduling    Record interview        Medium
+ 11. Interview scheduling    Record interview        Medium
                           date/time and           
                           interviewer or          
                           interview type where    
                           feasible                
 
-  Analytics               Basic counts and        Medium
+ 12. Analytics               Basic counts and        Medium
                           recruitment-stage       
                           statistics              
 
-  Demo data               Preloaded vacancy and   Critical
+ 13. Demo data               Preloaded vacancy and   Critical
                           candidate records,      
                           including three         
                           candidates for the      

@@ -49,7 +49,7 @@ export default function JobsPage() {
             salaryCurrency: "PKR",
             status: "OPEN" as const,
             applicantCount: 3,
-            createdAt: new Date().toISOString(),
+            createdAt: "2026-11-01T09:00:00.000Z",
           },
           {
             id: "job-frontend-dev",
@@ -62,7 +62,7 @@ export default function JobsPage() {
             salaryCurrency: "PKR",
             status: "OPEN" as const,
             applicantCount: 2,
-            createdAt: new Date().toISOString(),
+            createdAt: "2026-11-02T10:00:00.000Z",
           },
           {
             id: "job-data-analyst",
@@ -75,7 +75,7 @@ export default function JobsPage() {
             salaryCurrency: "PKR",
             status: "CLOSED" as const,
             applicantCount: 1,
-            createdAt: new Date().toISOString(),
+            createdAt: "2026-10-25T12:00:00.000Z",
           },
         ];
 

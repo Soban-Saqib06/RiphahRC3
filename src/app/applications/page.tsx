@@ -227,10 +227,9 @@ export default function ApplicationsPage() {
                   1
                 </span>
               </div>
-
               <div className="space-y-3">
                 {demoCandidates
-                  .filter((c) => c.status === "REJECTED" || c.status === "SELECTED")
+                  .filter((c) => c.status === "REJECTED")
                   .map((cand) => (
                     <CandidateCard key={cand.id} candidate={cand} />
                   ))}
