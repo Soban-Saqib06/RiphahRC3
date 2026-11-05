@@ -1,36 +1,42 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   FileText,
-  CheckCircle2,
-  AlertTriangle,
   Sparkles,
   Calendar,
-  MessageSquare,
-  ChevronRight,
-  Download,
-  RotateCcw,
-  UserCheck,
-  UserX,
-  Briefcase,
-  MapPin,
   Clock,
   ArrowLeft,
   Loader2,
+  AlertCircle,
+  ExternalLink,
+  Mail,
+  Phone,
+  MapPin,
+  CheckCircle2,
+  HelpCircle,
 } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
-import { LiquidScoreCircle } from "@/components/shared/liquid-score-circle";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { PageHeader } from "@/components/shared/page-header";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { AssessmentPanel } from "@/components/assessments/assessment-panel";
+import { RecruiterNotes } from "@/components/applications/recruiter-notes";
+import { StatusActions } from "@/components/applications/status-actions";
+import { StatusTimeline } from "@/components/applications/status-timeline";
+import { ResumeViewer } from "@/components/applications/resume-viewer";
+import { CandidateTracker } from "@/components/applications/candidate-tracker";
 import type {
   ApplicationDetailDTO,
   CandidateApplicationDTO,
   UserDTO,
+  ApplicationStatus,
+  StatusEventDTO,
 } from "@/lib/dto";
+
+type TabKey = "assessment" | "resume" | "timeline" | "interviews";
 
 export default function ApplicationDetailPage() {
   const params = useParams();
@@ -39,12 +45,36 @@ export default function ApplicationDetailPage() {
   const [currentUser, setCurrentUser] = useState<UserDTO | null>(null);
   const [candidateApp, setCandidateApp] = useState<CandidateApplicationDTO | null>(null);
   const [recruiterApp, setRecruiterApp] = useState<ApplicationDetailDTO | null>(null);
-  const [activeTab, setActiveTab] = useState<"assessment" | "questions" | "resume">("assessment");
+  const [activeTab, setActiveTab] = useState<TabKey>("assessment");
   const [loading, setLoading] = useState(true);
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const fetchApplication = useCallback(async () => {
+    if (!applicationId) return;
+    try {
+      const res = await fetch(`/api/applications/${applicationId}`);
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.error?.message || "Failed to load application");
+      }
+
+      const app = json.data?.application;
+      if ("displayStatus" in app && "timeline" in app) {
+        setCandidateApp(app as CandidateApplicationDTO);
+      } else {
+        setRecruiterApp(app as ApplicationDetailDTO);
+      }
+    } catch (err: any) {
+      setError(err.message || "Could not retrieve application details");
+    } finally {
+      setLoading(false);
+    }
+  }, [applicationId]);
 
   useEffect(() => {
-    // 1. Load current user
+    // 1. Fetch authenticated user
     fetch("/api/auth/me")
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
@@ -54,93 +84,27 @@ export default function ApplicationDetailPage() {
       })
       .catch(() => {});
 
-    // 2. Load application
-    if (!applicationId) return;
-    fetch(`/api/applications/${applicationId}`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success && json.data?.application) {
-          const app = json.data.application;
-          if ("displayStatus" in app && "timeline" in app) {
-            setCandidateApp(app as CandidateApplicationDTO);
-          } else {
-            setRecruiterApp(app as ApplicationDetailDTO);
-          }
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [applicationId]);
+    // 2. Fetch application
+    fetchApplication();
+  }, [fetchApplication]);
+
+  const handleStatusChanged = (
+    newStatus: ApplicationStatus,
+    newEvent: StatusEventDTO
+  ) => {
+    setRecruiterApp((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        status: newStatus,
+        statusEvents: [newEvent, ...prev.statusEvents],
+      };
+    });
+    setFeedback(`Application status transitioned to ${newStatus}`);
+    setTimeout(() => setFeedback(null), 4000);
+  };
 
   const isCandidate = currentUser?.role === "CANDIDATE";
-
-  // Recruiter Demo fallback candidate matching wireframe
-  const demoRecruiterCandidate = {
-    name: "Ethan Calder",
-    headline: "Senior Backend Engineer • 5+ years experience",
-    email: "candidate1@demo.example",
-    jobTitle: "Backend Developer",
-    status: "PARSED",
-    overallScore: 94,
-    skillsScore: 96,
-    experienceScore: 92,
-    projectsScore: 94,
-    qualificationsScore: 95,
-    strengths: [
-      "Advanced Python & Django Architecture (5+ years production)",
-      "High-scale PostgreSQL table partitioning & indexing",
-      "Containerized microservices orchestration via Docker",
-    ],
-    gaps: [
-      {
-        requirement: "FastAPI / Secondary async framework",
-        note: "Primary focus is Django/Flask; async experience unverified",
-      },
-    ],
-    evidence: [
-      {
-        requirement: "Python (Required - Priority 5)",
-        verdict: "MATCHED",
-        excerpt: "Led design and scaling of core Python distributed services processing 50k requests/min.",
-        reasoning: "Demonstrates 5+ years deep language expertise in high-load production environments.",
-      },
-      {
-        requirement: "Django (Required - Priority 5)",
-        verdict: "MATCHED",
-        excerpt: "Engineered multi-tenant Django applications with custom authentication and middleware.",
-        reasoning: "Explicit verbatim evidence of production enterprise Django architecture.",
-      },
-      {
-        requirement: "PostgreSQL (Required - Priority 4)",
-        verdict: "MATCHED",
-        excerpt: "Optimized complex PostgreSQL queries, partitioning tables with over 20M records.",
-        reasoning: "Confirmed advanced PostgreSQL tuning and database modeling proficiency.",
-      },
-      {
-        requirement: "Docker (Required - Priority 3)",
-        verdict: "MATCHED",
-        excerpt: "Wrote multi-stage Dockerfiles and managed containerized staging and production deployments.",
-        reasoning: "Directly matches containerization requirement.",
-      },
-    ],
-    questions: [
-      {
-        category: "TECHNICAL",
-        question: "Walk us through your PostgreSQL query optimization strategy when scaling beyond 20 million records. How did you design table partitioning?",
-        rationale: "Probes candidate's claimed database scaling expertise from resume.",
-      },
-      {
-        category: "PROJECT",
-        question: "In your distributed Python service, how did you handle asynchronous task failure and message queue retries?",
-        rationale: "Evaluates production reliability and distributed systems architecture.",
-      },
-    ],
-  };
-
-  const handleStatusChange = (newStatus: string) => {
-    setActionSuccess(`Candidate status updated to ${newStatus}`);
-    setTimeout(() => setActionSuccess(null), 3000);
-  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F2EC]">
@@ -148,338 +112,315 @@ export default function ApplicationDetailPage() {
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {loading ? (
-          <div className="flex min-h-[400px] items-center justify-center">
+          <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-[#D97745]" />
+            <p className="text-xs text-[#77776E]">Loading application requisition...</p>
           </div>
-        ) : isCandidate ? (
-          /* ======================================================== */
-          /* CANDIDATE VIEW: Application Status Tracker               */
-          /* ======================================================== */
-          <>
-            <PageHeader
-              title={candidateApp?.job.title || "Application Status"}
-              description={`Application Requisition #${applicationId} • ${candidateApp?.job.department}`}
-              breadcrumbs={[
-                { label: "Dashboard", href: "/dashboard" },
-                { label: "My Applications", href: "/applications" },
-                { label: "Status Tracker" },
-              ]}
-              actions={
-                <Link
-                  href="/applications"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-[#CDC7BD] bg-white px-3.5 py-2 text-xs font-semibold text-[#242522] hover:bg-[#FAF8F5] transition-colors"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Back to Applications
-                </Link>
-              }
-            />
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Left Column: Progress Timeline (7 cols) */}
-              <div className="lg:col-span-7 space-y-6">
-                {/* Current Status Banner */}
-                <div className="rounded-2xl border border-[#E2DDD5] bg-white p-6 shadow-xs">
-                  <div className="flex items-center justify-between border-b border-[#E2DDD5] pb-4 mb-5">
-                    <div>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#77776E]">
-                        Current Stage
-                      </span>
-                      <h3 className="font-heading text-xl font-bold text-[#242522] mt-0.5">
-                        {candidateApp?.displayStatus || "Submitted"}
-                      </h3>
-                    </div>
-                    {candidateApp?.status && (
-                      <StatusBadge status={candidateApp.status} size="md" />
-                    )}
-                  </div>
-
-                  {/* Status Timeline */}
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#77776E] mb-4">
-                    Application History
-                  </h4>
-                  <div className="space-y-4">
-                    {candidateApp?.timeline.map((step, idx) => (
-                      <div key={idx} className="flex items-start gap-3.5">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EAF3EC] text-[#3D784A] shrink-0 mt-0.5">
-                          <CheckCircle2 className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 rounded-xl border border-[#E2DDD5] bg-[#FAF8F5] p-3 text-xs">
-                          <div className="flex items-center justify-between font-bold text-[#242522]">
-                            <span>{step.displayStatus}</span>
-                            <span className="text-[11px] font-normal text-[#77776E]">
-                              {new Date(step.at).toLocaleString()}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-[#77776E] mt-0.5">
-                            Status event recorded by recruitment workflow.
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Upcoming Interviews Card */}
-                {candidateApp?.upcomingInterviews && candidateApp.upcomingInterviews.length > 0 && (
-                  <div className="rounded-2xl border border-[#ECC9B6] bg-white p-6 shadow-xs">
-                    <div className="flex items-center gap-2 text-sm font-bold text-[#D97745] mb-3">
-                      <Calendar className="h-4 w-4" />
-                      <span>Scheduled Interviews</span>
-                    </div>
-                    <div className="space-y-3">
-                      {candidateApp.upcomingInterviews.map((inv) => (
-                        <div
-                          key={inv.id}
-                          className="rounded-xl border border-[#ECC9B6] bg-[#F9ECE5] p-4 text-xs"
-                        >
-                          <div className="flex items-start justify-between font-bold text-[#242522]">
-                            <span>{inv.type.replace("_", " ")}</span>
-                            <span className="rounded bg-white px-2 py-0.5 text-[10px] text-[#D97745]">
-                              {inv.durationMinutes} min
-                            </span>
-                          </div>
-                          <p className="text-[#77776E] mt-1">
-                            Date: {new Date(inv.scheduledAt).toLocaleString()}
-                          </p>
-                          {inv.location && (
-                            <p className="text-[#77776E] mt-0.5">
-                              Format: {inv.location}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column: Requisition & Cover Note (5 cols) */}
-              <div className="lg:col-span-5 space-y-6">
-                {/* Vacancy Summary */}
-                {candidateApp?.job && (
-                  <div className="rounded-2xl border border-[#E2DDD5] bg-white p-6 shadow-xs space-y-3 text-xs">
-                    <h4 className="font-heading text-sm font-bold text-[#242522] border-b border-[#E2DDD5] pb-2">
-                      Position Overview
-                    </h4>
-                    <div className="space-y-2 text-[#77776E]">
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="h-3.5 w-3.5 text-[#CDC7BD]" />
-                        <span>Department: <strong className="text-[#242522]">{candidateApp.job.department}</strong></span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-3.5 w-3.5 text-[#CDC7BD]" />
-                        <span>Location: <strong className="text-[#242522]">{candidateApp.job.location}</strong></span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-3.5 w-3.5 text-[#CDC7BD]" />
-                        <span>Type: <strong className="text-[#242522]">{candidateApp.job.employmentType.replace("_", " ")}</strong></span>
-                      </div>
-                      {candidateApp.job.salaryMin && candidateApp.job.salaryMax && (
-                        <div className="pt-2 border-t border-[#E2DDD5] font-semibold text-[#242522]">
-                          Salary Range: {candidateApp.job.salaryCurrency}{" "}
-                          {candidateApp.job.salaryMin.toLocaleString()} - {candidateApp.job.salaryMax.toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Cover Note */}
-                {candidateApp?.coverNote && (
-                  <div className="rounded-2xl border border-[#E2DDD5] bg-white p-6 shadow-xs">
-                    <h4 className="font-heading text-sm font-bold text-[#242522] mb-2 flex items-center gap-1.5">
-                      <MessageSquare className="h-3.5 w-3.5 text-[#D97745]" />
-                      Attached Cover Note
-                    </h4>
-                    <p className="text-xs text-[#242522] leading-relaxed bg-[#FAF8F5] p-3 rounded-xl border border-[#E2DDD5]">
-                      {candidateApp.coverNote}
-                    </p>
-                  </div>
-                )}
-              </div>
+        ) : error ? (
+          <div className="rounded-2xl border border-[#EFC6C3] bg-white p-8 text-center space-y-4">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#F8ECEB] text-[#BA3D35]">
+              <AlertCircle className="h-6 w-6" />
             </div>
-          </>
-        ) : (
-          /* ======================================================== */
-          /* RECRUITER VIEW: Full Candidate Assessment Review         */
-          /* ======================================================== */
+            <h3 className="font-heading text-lg font-bold text-[#242522]">
+              Application Not Found
+            </h3>
+            <p className="text-xs text-[#77776E] max-w-md mx-auto">{error}</p>
+            <Link
+              href="/applications"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#242522] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#3A3B37]"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to Applications
+            </Link>
+          </div>
+        ) : isCandidate && candidateApp ? (
+          <CandidateTracker application={candidateApp} />
+        ) : recruiterApp ? (
           <>
             <PageHeader
-              title={demoRecruiterCandidate.name}
-              description={`Applicant for ${demoRecruiterCandidate.jobTitle} • ID: ${applicationId}`}
+              title={recruiterApp.profile?.name || recruiterApp.candidate.name}
+              description={`Applicant for ${recruiterApp.job.title} • Submitted ${new Date(recruiterApp.submittedAt).toLocaleDateString()}`}
               breadcrumbs={[
-                { label: "Candidates", href: "/applications" },
-                { label: demoRecruiterCandidate.name },
+                { label: "Candidates", href: `/applications?jobId=${recruiterApp.jobId}` },
+                { label: recruiterApp.profile?.name || recruiterApp.candidate.name },
               ]}
               actions={
-                <div className="flex items-center gap-3">
-                  <StatusBadge status={demoRecruiterCandidate.status} />
-                  <button
-                    type="button"
-                    onClick={() => handleStatusChange("SHORTLISTED")}
-                    className="rounded-md bg-[#D97745] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#C46332] transition-colors cursor-pointer"
-                  >
-                    Shortlist Candidate
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleStatusChange("REJECTED")}
-                    className="rounded-md border border-[#EFC6C3] bg-white px-3 py-2 text-xs font-semibold text-[#BA3D35] hover:bg-[#F8ECEB] transition-colors cursor-pointer"
-                  >
-                    Reject
-                  </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <StatusBadge status={recruiterApp.status} size="md" />
+                  <StatusActions
+                    applicationId={applicationId}
+                    currentStatus={recruiterApp.status}
+                    onStatusChanged={handleStatusChanged}
+                  />
                 </div>
               }
             />
 
-            {actionSuccess && (
-              <div className="mb-6 rounded-lg border border-[#C1DEC6] bg-[#EAF3EC] p-3 text-xs font-semibold text-[#3D784A]">
-                {actionSuccess}
+            {feedback && (
+              <div className="mb-6 flex items-center gap-2 rounded-lg border border-[#C1DEC6] bg-[#EAF3EC] p-3 text-xs font-semibold text-[#3D784A]">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>{feedback}</span>
               </div>
             )}
 
-            {/* Recruiter Assessment Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Left Column: AI Match Score & Rubrics (4 cols) */}
+              {/* Left Column: Candidate Info & Private Notes (4 cols) */}
               <div className="lg:col-span-4 space-y-6">
+                {/* Candidate Profile Summary */}
                 <div className="rounded-2xl border border-[#E2DDD5] bg-white p-6 shadow-xs space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#E8E3DA] text-xl font-bold text-[#242522]">
-                      {demoRecruiterCandidate.name.charAt(0)}
+                  <div className="flex items-center gap-3.5 border-b border-[#E2DDD5] pb-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E8E3DA] text-lg font-bold text-[#242522]">
+                      {(recruiterApp.profile?.name || recruiterApp.candidate.name).charAt(0)}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-[#242522]">
-                        {demoRecruiterCandidate.name}
+                      <h3 className="font-heading text-base font-bold text-[#242522]">
+                        {recruiterApp.profile?.name || recruiterApp.candidate.name}
                       </h3>
-                      <p className="text-xs text-[#77776E]">{demoRecruiterCandidate.headline}</p>
+                      <p className="text-xs text-[#77776E]">
+                        {recruiterApp.profile?.headline || "Applicant"}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-[#ECC9B6] bg-[#F9ECE5]/50 p-5 text-center">
-                    <div className="flex items-center justify-center mb-3">
-                      <LiquidScoreCircle
-                        score={demoRecruiterCandidate.overallScore}
-                        size="lg"
-                        label="AI Overall Match"
-                      />
+                  <div className="space-y-2 text-xs text-[#77776E]">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 text-[#CDC7BD]" />
+                      <span className="text-[#242522]">{recruiterApp.candidate.email}</span>
                     </div>
 
-                    <div className="space-y-2.5 pt-3 text-left text-xs border-t border-[#ECC9B6]/60">
-                      <div>
-                        <div className="flex justify-between font-semibold text-[#242522] mb-1">
-                          <span>Skills Match (50%)</span>
-                          <span className="font-bold text-[#D97745]">{demoRecruiterCandidate.skillsScore}%</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
-                          <div className="h-full bg-[#D97745]" style={{ width: `${demoRecruiterCandidate.skillsScore}%` }} />
-                        </div>
+                    {recruiterApp.profile?.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5 text-[#CDC7BD]" />
+                        <span className="text-[#242522]">{recruiterApp.profile.phone}</span>
                       </div>
+                    )}
 
-                      <div>
-                        <div className="flex justify-between font-semibold text-[#242522] mb-1">
-                          <span>Experience Relevance (25%)</span>
-                          <span className="font-bold text-[#D97745]">{demoRecruiterCandidate.experienceScore}%</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
-                          <div className="h-full bg-[#D97745]" style={{ width: `${demoRecruiterCandidate.experienceScore}%` }} />
-                        </div>
+                    {recruiterApp.profile?.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-[#CDC7BD]" />
+                        <span className="text-[#242522]">{recruiterApp.profile.location}</span>
                       </div>
+                    )}
 
-                      <div>
-                        <div className="flex justify-between font-semibold text-[#242522] mb-1">
-                          <span>Projects Alignment (15%)</span>
-                          <span className="font-bold text-[#D97745]">{demoRecruiterCandidate.projectsScore}%</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
-                          <div className="h-full bg-[#D97745]" style={{ width: `${demoRecruiterCandidate.projectsScore}%` }} />
-                        </div>
+                    {(recruiterApp.profile?.linkedinUrl || recruiterApp.profile?.githubUrl) && (
+                      <div className="flex items-center gap-3 pt-2 border-t border-[#E2DDD5]">
+                        {recruiterApp.profile?.linkedinUrl && (
+                          <a
+                            href={recruiterApp.profile.linkedinUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#D97745] hover:underline"
+                          >
+                            LinkedIn <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                        {recruiterApp.profile?.githubUrl && (
+                          <a
+                            href={recruiterApp.profile.githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#D97745] hover:underline"
+                          >
+                            GitHub <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
                       </div>
-
-                      <div>
-                        <div className="flex justify-between font-semibold text-[#242522] mb-1">
-                          <span>Qualifications (10%)</span>
-                          <span className="font-bold text-[#D97745]">{demoRecruiterCandidate.qualificationsScore}%</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
-                          <div className="h-full bg-[#D97745]" style={{ width: `${demoRecruiterCandidate.qualificationsScore}%` }} />
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
+
+                  {/* Profile completeness bar */}
+                  {recruiterApp.profile?.profileCompleteness !== undefined && (
+                    <div className="pt-2 border-t border-[#E2DDD5]">
+                      <div className="flex justify-between text-[11px] font-semibold mb-1">
+                        <span className="text-[#77776E]">Profile Completeness</span>
+                        <span className="text-[#242522]">{recruiterApp.profile.profileCompleteness}%</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
+                        <div
+                          className="h-full bg-[#3D784A]"
+                          style={{ width: `${recruiterApp.profile.profileCompleteness}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Job Link Card */}
+                <div className="rounded-2xl border border-[#E2DDD5] bg-white p-5 shadow-xs text-xs space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#77776E]">
+                      Position Applied
+                    </span>
+                    <Link
+                      href={`/jobs/${recruiterApp.job.id}`}
+                      className="text-[11px] font-semibold text-[#D97745] hover:underline"
+                    >
+                      View Job Details
+                    </Link>
+                  </div>
+                  <h4 className="font-bold text-[#242522] text-sm">
+                    {recruiterApp.job.title}
+                  </h4>
+                  <p className="text-[#77776E]">
+                    {recruiterApp.job.department} • {recruiterApp.job.location} • {recruiterApp.job.employmentType.replace("_", " ")}
+                  </p>
+                </div>
+
+                {/* Recruiter Private Notes Component */}
+                <RecruiterNotes
+                  applicationId={applicationId}
+                  initialNotes={recruiterApp.recruiterNotes}
+                  onNotesUpdated={(notes) =>
+                    setRecruiterApp((prev) => (prev ? { ...prev, recruiterNotes: notes } : null))
+                  }
+                />
               </div>
 
-              {/* Right Column: Evidence & Assessment Tabs (8 cols) */}
+              {/* Right Column: Tabbed Evidence, Assessment, Resume & History (8 cols) */}
               <div className="lg:col-span-8 space-y-6">
-                <div className="rounded-2xl border border-[#E2DDD5] bg-white p-6 shadow-xs">
-                  <div className="flex items-center gap-2 border-b border-[#E2DDD5] pb-3 mb-6">
+                {/* Tab Navigation */}
+                <div className="rounded-2xl border border-[#E2DDD5] bg-white p-2 shadow-xs">
+                  <div className="flex flex-wrap gap-1.5 border-b border-[#E2DDD5] pb-2 mb-4">
                     <button
                       type="button"
                       onClick={() => setActiveTab("assessment")}
-                      className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-colors cursor-pointer ${
                         activeTab === "assessment"
                           ? "bg-[#D97745] text-white"
-                          : "text-[#77776E] hover:text-[#242522]"
+                          : "text-[#77776E] hover:text-[#242522] hover:bg-[#FAF8F5]"
                       }`}
                     >
+                      <Sparkles className="h-3.5 w-3.5" />
                       AI Match Assessment
                     </button>
+
                     <button
                       type="button"
-                      onClick={() => setActiveTab("questions")}
-                      className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
-                        activeTab === "questions"
+                      onClick={() => setActiveTab("resume")}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                        activeTab === "resume"
                           ? "bg-[#D97745] text-white"
-                          : "text-[#77776E] hover:text-[#242522]"
+                          : "text-[#77776E] hover:text-[#242522] hover:bg-[#FAF8F5]"
                       }`}
                     >
-                      Interview Questions
+                      <FileText className="h-3.5 w-3.5" />
+                      Resume & Details
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("timeline")}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                        activeTab === "timeline"
+                          ? "bg-[#D97745] text-white"
+                          : "text-[#77776E] hover:text-[#242522] hover:bg-[#FAF8F5]"
+                      }`}
+                    >
+                      <Clock className="h-3.5 w-3.5" />
+                      Status History ({recruiterApp.statusEvents?.length || 0})
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("interviews")}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                        activeTab === "interviews"
+                          ? "bg-[#D97745] text-white"
+                          : "text-[#77776E] hover:text-[#242522] hover:bg-[#FAF8F5]"
+                      }`}
+                    >
+                      <Calendar className="h-3.5 w-3.5" />
+                      Interviews & Questions
                     </button>
                   </div>
 
-                  {activeTab === "assessment" ? (
-                    <div className="space-y-6">
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-[#77776E] mb-3">
-                          Verified Resume Evidence
-                        </h4>
-                        <div className="space-y-3">
-                          {demoRecruiterCandidate.evidence.map((item, idx) => (
-                            <div key={idx} className="rounded-xl border border-[#E2DDD5] bg-[#FAF8F5] p-4 text-xs">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className="font-bold text-[#242522]">{item.requirement}</span>
-                                <span className="rounded bg-[#EAF3EC] px-2 py-0.5 font-bold text-[#3D784A] text-[10px]">
-                                  {item.verdict}
-                                </span>
-                              </div>
-                              <blockquote className="border-l-2 border-[#D97745] pl-3 italic text-[#77776E] my-2">
-                                &ldquo;{item.excerpt}&rdquo;
-                              </blockquote>
-                              <p className="text-[11px] text-[#242522]">{item.reasoning}</p>
+                  {/* Tab Contents */}
+                  <div className="p-2">
+                    {activeTab === "assessment" && (
+                      <AssessmentPanel
+                        applicationId={applicationId}
+                        initialAssessment={recruiterApp.assessment}
+                        onAssessmentUpdated={(updated) =>
+                          setRecruiterApp((prev) =>
+                            prev ? { ...prev, assessment: updated } : null
+                          )
+                        }
+                      />
+                    )}
+
+                    {activeTab === "resume" && (
+                      <ResumeViewer
+                        resume={recruiterApp.resume}
+                        coverNote={recruiterApp.coverNote}
+                      />
+                    )}
+
+                    {activeTab === "timeline" && (
+                      <StatusTimeline events={recruiterApp.statusEvents || []} />
+                    )}
+
+                    {activeTab === "interviews" && (
+                      <div className="space-y-6">
+                        <div className="rounded-2xl border border-[#E2DDD5] bg-[#FAF8F5] p-5 text-xs space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-[#242522]">
+                              Interview Preparation & Questions
+                            </h4>
+                            <span className="rounded bg-white px-2 py-0.5 text-[11px] font-semibold text-[#D97745] border border-[#E2DDD5]">
+                              {recruiterApp.questionCount} Questions Available
+                            </span>
+                          </div>
+                          <p className="text-[#77776E] leading-relaxed">
+                            Generate and review structured interview questions tailored to this candidate&apos;s verified resume evidence and assessment gaps.
+                          </p>
+                          <div className="pt-2">
+                            <Link
+                              href={`/questions?applicationId=${applicationId}`}
+                              className="inline-flex items-center gap-1.5 rounded-md bg-[#242522] px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#3A3B37]"
+                            >
+                              <HelpCircle className="h-3.5 w-3.5" />
+                              Open Question Generator
+                            </Link>
+                          </div>
+                        </div>
+
+                        {/* Scheduled Interviews List */}
+                        {recruiterApp.interviews && recruiterApp.interviews.length > 0 ? (
+                          <div className="rounded-2xl border border-[#E2DDD5] bg-white p-5 shadow-xs space-y-3">
+                            <h4 className="font-bold text-xs text-[#242522] border-b border-[#E2DDD5] pb-2">
+                              Scheduled Interviews ({recruiterApp.interviews.length})
+                            </h4>
+                            <div className="space-y-2">
+                              {recruiterApp.interviews.map((inv) => (
+                                <div
+                                  key={inv.id}
+                                  className="rounded-xl border border-[#E2DDD5] bg-[#FAF8F5] p-3 text-xs space-y-1"
+                                >
+                                  <div className="flex justify-between items-center font-bold text-[#242522]">
+                                    <span>{inv.type.replace("_", " ")}</span>
+                                    <span className="text-[11px] font-normal text-[#77776E]">
+                                      {new Date(inv.scheduledAt).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-[#77776E]">
+                                    Interviewer: {inv.interviewerName || "Unassigned"} • Duration: {inv.durationMinutes} min
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-[#E2DDD5] bg-white p-6 text-center text-xs text-[#77776E]">
+                            No interviews scheduled yet. Shortlist this candidate to schedule an interview.
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {demoRecruiterCandidate.questions.map((q, idx) => (
-                        <div key={idx} className="rounded-xl border border-[#E2DDD5] bg-[#FAF8F5] p-4 text-xs">
-                          <span className="rounded bg-[#FAF8F5] border border-[#E2DDD5] px-2 py-0.5 text-[10px] font-bold text-[#D97745]">
-                            {q.category}
-                          </span>
-                          <p className="font-semibold text-[#242522] mt-2 mb-1">{q.question}</p>
-                          <p className="text-[11px] text-[#77776E]">Rationale: {q.rationale}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </>
-        )}
+        ) : null}
       </main>
 
       <Footer />
