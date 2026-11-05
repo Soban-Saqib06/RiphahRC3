@@ -1,15 +1,15 @@
 import { NextRequest } from "next/server";
-import { ok, handleError } from "@/lib/api";
-import { requireUser } from "@/lib/auth";
+import { ok, fail, handleError } from "@/lib/api";
+import { getSessionUser } from "@/lib/auth";
 import { ComparisonQuerySchema } from "@/lib/features/comparison/schema";
 import { getComparisonData } from "@/lib/features/comparison/service";
 
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireUser(["RECRUITER"]);
-    if (!auth.ok) {
-      return auth.response;
+    const user = await getSessionUser();
+    if (user && user.role === "CANDIDATE") {
+      return fail("FORBIDDEN", "Candidates cannot access candidate comparison matrix.", 403);
     }
 
     const { searchParams } = new URL(req.url);

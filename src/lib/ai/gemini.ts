@@ -41,8 +41,7 @@ export async function generateJson<T>({
     );
   }
 
-  const model = process.env.AI_MODEL || process.env.GEMINI_MODEL || "gemini-1.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  let activeModel = process.env.AI_MODEL || process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
   const requestBody = {
     contents: [
@@ -61,10 +60,11 @@ export async function generateJson<T>({
   };
 
   let attempts = 0;
-  const maxAttempts = 2; // initial + 1 retry on invalid JSON
+  const maxAttempts = 2; // initial + 1 retry
 
   while (attempts < maxAttempts) {
     attempts++;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -94,6 +94,11 @@ export async function generateJson<T>({
           "AI rate limit reached. Please try again shortly.",
           429
         );
+      }
+      if (response.status === 503 && attempts < maxAttempts) {
+        // When the primary model experiences high-demand spikes (503), fall back to flash-lite on retry
+        activeModel = "gemini-3.1-flash-lite";
+        continue;
       }
       throw new AppError(
         "AI_FAILED",

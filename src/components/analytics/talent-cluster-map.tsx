@@ -693,7 +693,7 @@ export function TalentClusterMap({
             {rawCandidates.map((cand) => {
               const cx = toSvgX(cand.technicalSkillFit);
               const cy = toSvgY(cand.experienceFit);
-              const radius = 5.5 + (cand.evidenceCoverage / 100) * 3.5;
+              const radius = 7 + (cand.evidenceCoverage / 100) * 4;
               const color = getClusterColor(cand.cluster);
               const isSelected =
                 selectedCluster === "ALL" || selectedCluster === cand.cluster;
@@ -708,17 +708,27 @@ export function TalentClusterMap({
                   className="cursor-pointer transition-all duration-200"
                   onMouseEnter={() => setHoveredCandidate(cand)}
                   onMouseLeave={() => setHoveredCandidate(null)}
+                  onClick={() => setHoveredCandidate(cand)}
                 >
+                  {/* Large invisible hit area for effortless mouse targeting (44px+ hit target) */}
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={Math.max(radius + 15, 22)}
+                    fill="transparent"
+                    className="cursor-pointer"
+                  />
+
                   {/* Outer ring on hover matching wireframe R10 */}
                   {isHovered && (
                     <circle
                       cx={cx}
                       cy={cy}
-                      r={radius + 4}
+                      r={radius + 5}
                       fill="none"
                       stroke="#242522"
-                      strokeWidth="2"
-                      className="animate-pulse"
+                      strokeWidth="2.5"
+                      className="animate-pulse pointer-events-none"
                     />
                   )}
 
@@ -729,9 +739,9 @@ export function TalentClusterMap({
                     r={radius}
                     fill={color}
                     stroke="#FFFFFF"
-                    strokeWidth="1.5"
-                    opacity={isSelected ? 1 : 0.2}
-                    className="transition-transform duration-150 hover:scale-125 drop-shadow-xs"
+                    strokeWidth="2"
+                    opacity={isSelected ? 1 : 0.3}
+                    className="transition-transform duration-150 hover:scale-125 drop-shadow-md pointer-events-none"
                   />
                 </g>
               );
@@ -742,6 +752,8 @@ export function TalentClusterMap({
           {hoveredCandidate && (
             <div
               className="pointer-events-auto absolute z-40 w-64 rounded-xl border border-[#3E403B] bg-[#242522] p-3.5 text-white shadow-2xl transition-all"
+              onMouseEnter={() => setHoveredCandidate(hoveredCandidate)}
+              onMouseLeave={() => setHoveredCandidate(null)}
               style={(() => {
                 const cx = toSvgX(hoveredCandidate.technicalSkillFit);
                 const cy = toSvgY(hoveredCandidate.experienceFit);
@@ -768,14 +780,27 @@ export function TalentClusterMap({
                     {hoveredCandidate.role}
                   </p>
                 </div>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[9px] font-semibold text-white"
-                  style={{
-                    backgroundColor: getClusterColor(hoveredCandidate.cluster),
-                  }}
-                >
-                  {hoveredCandidate.cluster.replace("_", " ")}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[9px] font-semibold text-white"
+                    style={{
+                      backgroundColor: getClusterColor(hoveredCandidate.cluster),
+                    }}
+                  >
+                    {hoveredCandidate.cluster.replace("_", " ")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setHoveredCandidate(null);
+                    }}
+                    className="rounded p-0.5 text-[#A6A29A] hover:bg-[#3E403B] hover:text-white"
+                    title="Dismiss"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
 
               {/* Overall Match Progress Bar */}

@@ -103,13 +103,13 @@ export function ResumeViewer({ resume, coverNote }: ResumeViewerProps) {
                 Extracted Skills ({parsed.skills.length})
               </h5>
               <div className="flex flex-wrap gap-2">
-                {parsed.skills.map((skill, idx) => (
+                {parsed.skills.map((skill: any, idx) => (
                   <div
                     key={idx}
                     className="inline-flex items-center rounded-lg border border-[#E2DDD5] bg-[#FAF8F5] px-2.5 py-1 text-xs text-[#242522]"
-                    title={skill.evidence || undefined}
+                    title={typeof skill === "object" ? skill?.evidence || undefined : undefined}
                   >
-                    <span className="font-medium">{skill.name}</span>
+                    <span className="font-medium">{typeof skill === "string" ? skill : skill?.name || ""}</span>
                   </div>
                 ))}
               </div>

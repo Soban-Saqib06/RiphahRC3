@@ -57,6 +57,7 @@ export default function ProfilePage() {
   // Manual Resume Edit Modal State
   const [isEditingResumeData, setIsEditingResumeData] = useState(false);
   const [editParsedData, setEditParsedData] = useState<ParsedResume | null>(null);
+  const [skillsInput, setSkillsInput] = useState<string>("");
   const [savingResumeData, setSavingResumeData] = useState(false);
 
   // Initial load
@@ -245,6 +246,11 @@ export default function ProfilePage() {
       projects: [],
       certifications: [],
     };
+    const initialSkillsStr = (initialParsed.skills || [])
+      .map((s: any) => (typeof s === "string" ? s : s?.name || ""))
+      .filter(Boolean)
+      .join(", ");
+    setSkillsInput(initialSkillsStr);
     setEditParsedData(initialParsed);
     setIsEditingResumeData(true);
   };
@@ -254,11 +260,22 @@ export default function ProfilePage() {
     setSavingResumeData(true);
     setUploadError(null);
 
+    const parsedSkills = skillsInput
+      .split(/[,;\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((name) => ({ name, evidence: null }));
+
+    const dataToSave = {
+      ...editParsedData,
+      skills: parsedSkills,
+    };
+
     try {
       const res = await fetch(`/api/resumes/${latestResume.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ parsedData: editParsedData }),
+        body: JSON.stringify({ parsedData: dataToSave }),
       });
 
       const json = await res.json();
@@ -716,15 +733,19 @@ export default function ProfilePage() {
                   </h5>
                   {parsedData.skills && parsedData.skills.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
-                      {parsedData.skills.map((s, idx) => (
-                        <span
-                          key={idx}
-                          className="rounded-md border border-[#E2DDD5] bg-[#FAF8F5] px-2.5 py-1 text-xs font-medium text-[#242522]"
-                          title={s.evidence || undefined}
-                        >
-                          {s.name}
-                        </span>
-                      ))}
+                      {parsedData.skills.map((s: any, idx) => {
+                        const name = typeof s === "string" ? s : s?.name || "";
+                        const evidence = typeof s === "object" ? s?.evidence : null;
+                        return (
+                          <span
+                            key={idx}
+                            className="rounded-md border border-[#E2DDD5] bg-[#FAF8F5] px-2.5 py-1 text-xs font-medium text-[#242522]"
+                            title={evidence || undefined}
+                          >
+                            {name}
+                          </span>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-xs text-[#77776E] italic">No skills extracted.</p>
@@ -864,10 +885,12 @@ export default function ProfilePage() {
                 </label>
                 <input
                   type="text"
-                  value={editParsedData.skills.map((s) => s.name).join(", ")}
+                  value={skillsInput}
                   onChange={(e) => {
-                    const list = e.target.value
-                      .split(",")
+                    const val = e.target.value;
+                    setSkillsInput(val);
+                    const list = val
+                      .split(/[,;\n]/)
                       .map((s) => s.trim())
                       .filter(Boolean);
                     setEditParsedData({
@@ -875,8 +898,44 @@ export default function ProfilePage() {
                       skills: list.map((name) => ({ name, evidence: null })),
                     });
                   }}
-                  className="w-full rounded-lg border border-[#CDC7BD] bg-white p-2 text-xs text-[#242522] focus:border-[#D97745] focus:outline-hidden"
+                  placeholder="e.g. Python, React, PostgreSQL, Docker, TypeScript"
+                  className="w-full rounded-lg border border-[#CDC7BD] bg-white p-2.5 text-xs text-[#242522] focus:border-[#D97745] focus:outline-hidden"
                 />
+                <p className="mt-1 text-[11px] text-[#77776E]">
+                  Type skills separated by commas. Each skill is automatically parsed into a tag.
+                </p>
+                {editParsedData.skills && editParsedData.skills.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-[#FAF8F5] rounded-lg border border-[#E2DDD5]">
+                    {editParsedData.skills.map((s: any, idx) => {
+                      const name = typeof s === "string" ? s : s?.name || "";
+                      return (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-[#CDC7BD] bg-white px-2 py-0.5 text-xs font-medium text-[#242522] shadow-2xs"
+                        >
+                          {name}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = editParsedData.skills.filter((_, i) => i !== idx);
+                              setEditParsedData({ ...editParsedData, skills: next });
+                              setSkillsInput(
+                                next
+                                  .map((n: any) => (typeof n === "string" ? n : n?.name || ""))
+                                  .filter(Boolean)
+                                  .join(", ")
+                              );
+                            }}
+                            className="text-[#77776E] hover:text-[#DC2626] font-bold text-xs"
+                            title="Remove skill"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div>
