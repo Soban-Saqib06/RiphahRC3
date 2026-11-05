@@ -3,7 +3,6 @@ import { requireUser } from "@/lib/auth";
 import { ok, handleError } from "@/lib/api";
 import { parseStoredResume } from "@/lib/features/resumes/service";
 
-export const runtime = "nodejs";
 
 export async function POST(
   _request: NextRequest,

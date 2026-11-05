@@ -6,7 +6,6 @@ import {
   getResumesForCandidate,
 } from "@/lib/features/resumes/service";
 
-export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {

@@ -9,7 +9,6 @@ import {
 } from "@/lib/features/applications/service";
 import { calculateProfileCompleteness } from "@/lib/features/profile/service";
 
-export const runtime = "nodejs";
 
 export async function GET(
   _request: NextRequest,

@@ -7,7 +7,6 @@ import {
   updateProfileForCandidate,
 } from "@/lib/features/profile/service";
 
-export const runtime = "nodejs";
 
 export async function GET() {
   try {

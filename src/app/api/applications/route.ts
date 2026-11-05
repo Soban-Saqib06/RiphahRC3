@@ -10,7 +10,6 @@ import {
 } from "@/lib/features/applications/service";
 import { ApplicationStatus } from "@/lib/dto";
 
-export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
