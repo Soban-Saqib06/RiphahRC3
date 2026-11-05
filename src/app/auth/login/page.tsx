@@ -29,7 +29,11 @@ export default function LoginPage() {
       if (!res.ok || !data.success) {
         setError(data.error?.message || "Invalid credentials");
       } else {
-        router.push("/dashboard");
+        if (data.data?.user?.role === "CANDIDATE") {
+          router.push("/jobs");
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

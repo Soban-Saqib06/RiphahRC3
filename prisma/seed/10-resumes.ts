@@ -1,371 +1,260 @@
-import fs from "fs/promises";
-import path from "path";
-import crypto from "crypto";
 import { prisma } from "../../src/lib/db";
-import { extractPdfText } from "../../src/lib/pdf";
-
-function createPdfBuffer(lines: string[]): Buffer {
-  const contentStream = lines
-    .map((l, i) => `${i === 0 ? "72 720 Td" : "0 -16 Td"}\n(${l.replace(/([()\\])/g, "\\$1")}) Tj`)
-    .join("\n");
-
-  const streamBody = `BT\n/F1 10 Tf\n${contentStream}\nET`;
-  const streamLength = Buffer.byteLength(streamBody);
-
-  const pdf = `%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
-endobj
-4 0 obj
-<< /Length ${streamLength} >>
-stream
-${streamBody}
-endstream
-endobj
-5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000229 00000 n 
-0000000350 00000 n 
-trailer
-<< /Size 6 /Root 1 0 R >>
-startxref
-430
-%%EOF`;
-
-  return Buffer.from(pdf);
-}
 
 export default async function seedResumes(): Promise<void> {
   console.log("🌱 Running 10-resumes.ts...");
 
-  const storageDir = path.join(process.cwd(), "storage", "resumes");
-  await fs.mkdir(storageDir, { recursive: true });
+  const candidates = await prisma.user.findMany({
+    where: { role: "CANDIDATE" },
+    include: { candidateProfile: true },
+  });
 
-  const resumesSeedData = [
+  const resumesData = [
     {
       email: "candidate1@demo.example",
-      originalFileName: "Ethan_Calder_Backend_CV.pdf",
-      lines: [
-        "Ethan Calder - Senior Backend Engineer",
-        "Email: candidate1@demo.example | Phone: +92 300 1234567 | Lahore, Pakistan",
-        "Summary: Results-driven backend engineer with 5+ years building scalable microservices in Python and Django.",
-        "Led design and scaling of core Python distributed services processing 50k requests/min.",
-        "Engineered multi-tenant Django applications with custom authentication and middleware.",
-        "Optimized complex PostgreSQL queries, partitioning tables with over 20M records.",
-        "Wrote multi-stage Dockerfiles and managed containerized staging and production deployments via docker-compose.",
-        "Built distributed REST APIs and caching mechanisms using Redis and Postgres.",
-        "Skills: Python, Django, PostgreSQL, Postgres, Docker, docker-compose, REST APIs, Git, Linux",
-        "Education: BS in Computer Science, FAST National University (2015-2019)",
-      ],
+      fileName: "ethan_calder_resume.pdf",
+      storagePath: "resumes/demo/ethan_calder.pdf",
+      size: 145200,
+      extractedText: `Ethan Calder - Senior Backend Engineer
+Lahore, Pakistan | candidate1@demo.example | https://linkedin.com/in/ethan-calder
+Summary: Senior backend engineer with 5+ years of experience architecting high-throughput distributed systems in Python and Django.
+Work Experience:
+- Lead Backend Architect at CloudScale Tech (2021 - Present): Architected microservices processing 50k requests/min using Python 3.11 and Django REST Framework. Optimized PostgreSQL databases with table partitioning exceeding 20M rows. Built multi-stage Docker containers with automated CI/CD.
+- Software Engineer at DataStream Inc (2019 - 2021): Designed REST APIs, implemented Redis caching layers, and maintained Git branching workflows.
+Skills: Python, Django, PostgreSQL, Docker, REST API design, Git, Redis, Linux, Microservices.
+Education: BS in Computer Science, FAST-NUCES (2019).`,
       parsedData: {
-        fullName: "Ethan Calder",
-        email: "candidate1@demo.example",
-        phone: "+92 300 1234567",
-        location: "Lahore, Pakistan",
-        summary: "Results-driven backend engineer with 5+ years building scalable microservices in Python and Django.",
-        totalYearsExperience: 5.0,
-        skills: [
-          { name: "Python", evidence: "Led design and scaling of core Python distributed services processing 50k requests/min." },
-          { name: "Django", evidence: "Engineered multi-tenant Django applications with custom authentication and middleware." },
-          { name: "PostgreSQL", evidence: "Optimized complex PostgreSQL queries, partitioning tables with over 20M records." },
-          { name: "Docker", evidence: "Wrote multi-stage Dockerfiles and managed containerized staging and production deployments via docker-compose." },
-          { name: "REST APIs", evidence: "Built distributed REST APIs and caching mechanisms using Redis and Postgres." },
-          { name: "Git", evidence: "Skills: Python, Django, PostgreSQL, Postgres, Docker, docker-compose, REST APIs, Git, Linux" },
-        ],
+        personalInfo: {
+          name: "Ethan Calder",
+          email: "candidate1@demo.example",
+          phone: "+92 300 1234567",
+          location: "Lahore, Pakistan",
+          links: ["https://linkedin.com/in/ethan-calder", "https://github.com/ethancalder"],
+        },
+        skills: ["Python", "Django", "PostgreSQL", "Docker", "REST API design", "Git", "Redis", "Microservices"],
         experience: [
           {
-            company: "FinTech Scale Systems",
-            title: "Senior Backend Developer",
-            startDate: "2021-01",
-            endDate: null,
-            isCurrent: true,
-            description: "Led design and scaling of core Python distributed services processing 50k requests/min.",
-            technologies: ["Python", "Django", "PostgreSQL", "Docker", "docker-compose"],
+            title: "Lead Backend Architect",
+            company: "CloudScale Tech",
+            duration: "2021 - Present (4 years)",
+            highlights: [
+              "Architected microservices processing 50k requests/min using Python and Django.",
+              "Partitioned PostgreSQL tables exceeding 20M rows, achieving sub-10ms queries.",
+              "Configured multi-stage Docker builds and automated CI/CD pipelines.",
+            ],
           },
         ],
         education: [
           {
-            institution: "FAST National University",
-            degree: "Bachelor of Science",
-            field: "Computer Science",
-            startYear: 2015,
-            endYear: 2019,
+            degree: "BS in Computer Science",
+            institution: "FAST-NUCES",
+            year: "2019",
           },
         ],
-        projects: [
-          {
-            name: "High-Throughput Ledger",
-            description: "Distributed transaction system using Python, Django, and PostgreSQL.",
-            technologies: ["Python", "Django", "PostgreSQL", "Docker"],
-          },
-        ],
-        certifications: ["Docker Certified Associate"],
       },
     },
     {
       email: "candidate2@demo.example",
-      originalFileName: "Priya_Nandakumar_API_Engineer.pdf",
-      lines: [
-        "Priya Nandakumar - Full Stack & API Engineer",
-        "Email: candidate2@demo.example | Phone: +92 301 9876543 | Islamabad, Pakistan",
-        "Summary: Software engineer focusing on Python web services with FastAPI, relational databases, and containerized deployments.",
-        "Experience: 3 years building REST APIs with Python, FastAPI, and Flask frameworks.",
-        "Designed schemas and optimized queries in MySQL and PostgreSQL databases.",
-        "Managed containerized services with Docker and Kubernetes deployments.",
-        "Skills: Python, FastAPI, Flask, MySQL, PostgreSQL, Docker, Kubernetes, REST APIs, Git",
-        "Education: BS Software Engineering, NUST (2017-2021)",
-      ],
+      fileName: "priya_nandakumar_resume.pdf",
+      storagePath: "resumes/demo/priya_nandakumar.pdf",
+      size: 138400,
+      extractedText: `Priya Nandakumar - Full Stack & API Engineer
+Islamabad, Pakistan | candidate2@demo.example | https://linkedin.com/in/priya-nandakumar
+Summary: Full stack engineer with 3.5 years of experience developing asynchronous RESTful APIs using Python, FastAPI, and Flask. Strong background in relational databases (MySQL) and Docker deployments on AWS.
+Work Experience:
+- Backend & Cloud Engineer at Apex Web Services (2022 - Present): Built asynchronous REST APIs in FastAPI with automated OpenAPI schema generation. Engineered scalable MySQL schema and index strategies. Deployed 12 containerized services using Docker on AWS ECS.
+- Junior Python Developer at NextGen Labs (2021 - 2022): Developed utility scripts and microservices in Flask and Python.
+Skills: Python, FastAPI, Flask, MySQL, Docker, REST APIs, AWS, Git.
+Education: BS in Software Engineering, NUST (2021).`,
       parsedData: {
-        fullName: "Priya Nandakumar",
-        email: "candidate2@demo.example",
-        phone: "+92 301 9876543",
-        location: "Islamabad, Pakistan",
-        summary: "Software engineer focusing on Python web services with FastAPI, relational databases, and containerized deployments.",
-        totalYearsExperience: 3.0,
-        skills: [
-          { name: "Python", evidence: "Experience: 3 years building REST APIs with Python, FastAPI, and Flask frameworks." },
-          { name: "FastAPI", evidence: "building REST APIs with Python, FastAPI, and Flask frameworks." },
-          { name: "MySQL", evidence: "Designed schemas and optimized queries in MySQL and PostgreSQL databases." },
-          { name: "Docker", evidence: "Managed containerized services with Docker and Kubernetes deployments." },
-        ],
+        personalInfo: {
+          name: "Priya Nandakumar",
+          email: "candidate2@demo.example",
+          phone: "+92 301 7654321",
+          location: "Islamabad, Pakistan",
+          links: ["https://linkedin.com/in/priya-nandakumar", "https://github.com/priyananda"],
+        },
+        skills: ["Python", "FastAPI", "Flask", "MySQL", "Docker", "REST APIs", "AWS", "Git"],
         experience: [
           {
-            company: "TechNova Solutions",
-            title: "API Software Engineer",
-            startDate: "2021-06",
-            endDate: null,
-            isCurrent: true,
-            description: "Developed asynchronous REST APIs using FastAPI and Flask.",
-            technologies: ["Python", "FastAPI", "MySQL", "Docker"],
+            title: "Backend & Cloud Engineer",
+            company: "Apex Web Services",
+            duration: "2022 - Present (3 years)",
+            highlights: [
+              "Built asynchronous REST APIs in FastAPI with automated OpenAPI schemas.",
+              "Engineered scalable MySQL schema and indexing strategies.",
+              "Deployed 12 containerized services using Docker on AWS ECS.",
+            ],
           },
         ],
         education: [
           {
+            degree: "BS in Software Engineering",
             institution: "NUST",
-            degree: "BS",
-            field: "Software Engineering",
-            startYear: 2017,
-            endYear: 2021,
+            year: "2021",
           },
         ],
-        projects: [
-          {
-            name: "Realtime Data Collector",
-            description: "API microservice processing telemetry streams with FastAPI.",
-            technologies: ["Python", "FastAPI", "MySQL"],
-          },
-        ],
-        certifications: [],
       },
     },
     {
       email: "candidate3@demo.example",
-      originalFileName: "Jonas_Weber_Resume.pdf",
-      lines: [
-        "Jonas Weber - Software Developer",
-        "Email: candidate3@demo.example | Phone: +92 302 5551234 | Karachi, Pakistan",
-        "Summary: Software developer with background in enterprise Java services and scripting in Python.",
-        "Built enterprise backend services using Java, Spring Boot, and relational SQL databases.",
-        "Authored internal automation scripts in Python for data sanitization.",
-        "Skills: Java, Spring Boot, SQL, Python, Git",
-        "Education: BS Computer Science, Karachi University (2018-2022)",
-      ],
+      fileName: "jonas_weber_resume.pdf",
+      storagePath: "resumes/demo/jonas_weber.pdf",
+      size: 129000,
+      extractedText: `Jonas Weber - Backend Developer
+Karachi, Pakistan | candidate3@demo.example | https://linkedin.com/in/jonas-weber
+Summary: Backend software engineer with 2 years of experience developing enterprise services in Java and Spring Boot. Basic proficiency in Python scripting and relational database maintenance.
+Work Experience:
+- Enterprise Software Engineer at SecureBank FinTech (2023 - Present): Developed banking enterprise microservices in Java and Spring Boot. Maintained database schema migrations and data integrity. Created automation scripts in Python.
+Skills: Java, Spring Boot, SQL, Python (Scripting), Git, Microservices.
+Education: BS in Computer Science, IBA Karachi (2023).`,
       parsedData: {
-        fullName: "Jonas Weber",
-        email: "candidate3@demo.example",
-        phone: "+92 302 5551234",
-        location: "Karachi, Pakistan",
-        summary: "Software developer with background in enterprise Java services and scripting in Python.",
-        totalYearsExperience: 2.0,
-        skills: [
-          { name: "Java", evidence: "Built enterprise backend services using Java, Spring Boot, and relational SQL databases." },
-          { name: "Spring Boot", evidence: "Built enterprise backend services using Java, Spring Boot, and relational SQL databases." },
-          { name: "Python", evidence: "Authored internal automation scripts in Python for data sanitization." },
-          { name: "SQL", evidence: "relational SQL databases." },
-        ],
+        personalInfo: {
+          name: "Jonas Weber",
+          email: "candidate3@demo.example",
+          phone: "+92 302 9876543",
+          location: "Karachi, Pakistan",
+          links: ["https://linkedin.com/in/jonas-weber", "https://github.com/jonasweber"],
+        },
+        skills: ["Java", "Spring Boot", "SQL", "Python", "Git", "Microservices"],
         experience: [
           {
-            company: "Enterprise Labs",
-            title: "Junior Backend Developer",
-            startDate: "2022-07",
-            endDate: null,
-            isCurrent: true,
-            description: "Maintained Java Spring Boot microservices.",
-            technologies: ["Java", "Spring Boot", "SQL"],
+            title: "Enterprise Software Engineer",
+            company: "SecureBank FinTech",
+            duration: "2023 - Present (2 years)",
+            highlights: [
+              "Developed banking enterprise microservices in Java and Spring Boot.",
+              "Created utility Python automation scripts.",
+              "Managed database schema migrations and integrity.",
+            ],
           },
         ],
         education: [
           {
-            institution: "Karachi University",
-            degree: "BS",
-            field: "Computer Science",
-            startYear: 2018,
-            endYear: 2022,
+            degree: "BS in Computer Science",
+            institution: "IBA Karachi",
+            year: "2023",
           },
         ],
-        projects: [
-          {
-            name: "Internal Inventory Manager",
-            description: "Spring Boot application with SQL backend.",
-            technologies: ["Java", "Spring Boot", "SQL"],
-          },
-        ],
-        certifications: [],
       },
     },
     {
       email: "candidate4@demo.example",
-      originalFileName: "Lena_Okafor_Frontend_CV.pdf",
-      lines: [
-        "Lena Okafor - Senior Frontend Specialist",
-        "Email: candidate4@demo.example | Phone: +92 303 7778899 | Lahore, Pakistan",
-        "Summary: Frontend engineer passionate about accessible interfaces, component libraries, and performant web applications.",
-        "Architected reusable design system components using React, TypeScript, and Tailwind CSS.",
-        "Optimized web vitals, accessibility compliance (WCAG AA), and responsive layouts across platforms.",
-        "Skills: React, TypeScript, Tailwind CSS, Next.js, HTML, CSS, Accessibility, Git",
-        "Education: BS Computer Science, ITU Lahore (2016-2020)",
-      ],
+      fileName: "lena_okafor_resume.pdf",
+      storagePath: "resumes/demo/lena_okafor.pdf",
+      size: 151200,
+      extractedText: `Lena Okafor - Senior Frontend Specialist
+Lahore, Pakistan | candidate4@demo.example | https://linkedin.com/in/lena-okafor
+Summary: Frontend specialist with 4+ years creating intuitive, accessible, and high-performance design systems and web apps with React, TypeScript, and Tailwind CSS.
+Experience:
+- Senior UI Engineer at OmniDesign (2022 - Present): Led design system development in React and TypeScript. Enforced WCAG 2.1 AA accessibility standards across 15+ product surfaces.
+- Frontend Engineer at PixelCraft (2020 - 2022): Built complex web dashboards in React and Next.js with data visualization tools.
+Skills: React, TypeScript, Tailwind CSS, Accessibility, Next.js, Data visualization, SQL.
+Education: BS in Computer Science, LUMS (2020).`,
       parsedData: {
-        fullName: "Lena Okafor",
-        email: "candidate4@demo.example",
-        phone: "+92 303 7778899",
-        location: "Lahore, Pakistan",
-        summary: "Frontend engineer passionate about accessible interfaces, component libraries, and performant web applications.",
-        totalYearsExperience: 4.5,
-        skills: [
-          { name: "React", evidence: "Architected reusable design system components using React, TypeScript, and Tailwind CSS." },
-          { name: "TypeScript", evidence: "Architected reusable design system components using React, TypeScript, and Tailwind CSS." },
-          { name: "CSS", evidence: "Architected reusable design system components using React, TypeScript, and Tailwind CSS." },
-          { name: "Accessibility", evidence: "Optimized web vitals, accessibility compliance (WCAG AA)" },
-        ],
+        personalInfo: {
+          name: "Lena Okafor",
+          email: "candidate4@demo.example",
+          phone: "+92 303 5551234",
+          location: "Lahore, Pakistan",
+          links: ["https://linkedin.com/in/lena-okafor"],
+        },
+        skills: ["React", "TypeScript", "Tailwind CSS", "Accessibility", "Next.js", "Data visualization", "SQL"],
         experience: [
           {
-            company: "Digital Experience Studio",
-            title: "Senior Frontend Engineer",
-            startDate: "2020-03",
-            endDate: null,
-            isCurrent: true,
-            description: "Led frontend design systems and application component development.",
-            technologies: ["React", "TypeScript", "Tailwind CSS"],
+            title: "Senior UI Engineer",
+            company: "OmniDesign",
+            duration: "2022 - Present (3 years)",
+            highlights: [
+              "Led design system development in React and TypeScript.",
+              "Enforced WCAG 2.1 AA accessibility standards across 15+ surfaces.",
+            ],
           },
         ],
         education: [
           {
-            institution: "ITU Lahore",
-            degree: "BS",
-            field: "Computer Science",
-            startYear: 2016,
-            endYear: 2020,
+            degree: "BS in Computer Science",
+            institution: "LUMS",
+            year: "2020",
           },
         ],
-        projects: [
-          {
-            name: "Accessible Component Library",
-            description: "Headless UI component kit built with React and TypeScript.",
-            technologies: ["React", "TypeScript", "Tailwind CSS"],
-          },
-        ],
-        certifications: [],
       },
     },
     {
       email: "candidate5@demo.example",
-      originalFileName: "Marco_Silva_Web_Dev.pdf",
-      lines: [
-        "Marco Silva - Junior Web Developer",
-        "Email: candidate5@demo.example | Phone: +92 304 1122334 | Rawalpindi, Pakistan",
-        "Summary: Recent computer science graduate with projects built in React and modern JavaScript.",
-        "Built responsive web applications with HTML, CSS, JavaScript, and React.",
-        "Collaborated on open source GitHub projects and web components.",
-        "Skills: JavaScript, HTML, CSS, React, Git",
-        "Education: BS Computer Science, Comsats Islamabad (2020-2024)",
-      ],
+      fileName: "marco_silva_resume.pdf",
+      storagePath: "resumes/demo/marco_silva.pdf",
+      size: 112000,
+      extractedText: `Marco Silva - Junior Web Developer
+Rawalpindi, Pakistan | candidate5@demo.example | https://linkedin.com/in/marco-silva
+Summary: Junior web developer and recent graduate eager to build modern user interfaces using HTML, CSS, JavaScript, and React.
+Experience:
+- Frontend Intern at TechSolutions (2024): Assisted in converting Figma designs into responsive HTML and CSS components.
+Skills: HTML, CSS, JavaScript, React, Git.
+Education: BS in Computer Science, COMSATS (2024).`,
       parsedData: {
-        fullName: "Marco Silva",
-        email: "candidate5@demo.example",
-        phone: "+92 304 1122334",
-        location: "Rawalpindi, Pakistan",
-        summary: "Recent computer science graduate with projects built in React and modern JavaScript.",
-        totalYearsExperience: 1.0,
-        skills: [
-          { name: "JavaScript", evidence: "Built responsive web applications with HTML, CSS, JavaScript, and React." },
-          { name: "HTML", evidence: "Built responsive web applications with HTML, CSS, JavaScript, and React." },
-          { name: "CSS", evidence: "Built responsive web applications with HTML, CSS, JavaScript, and React." },
-          { name: "React", evidence: "Built responsive web applications with HTML, CSS, JavaScript, and React." },
-        ],
+        personalInfo: {
+          name: "Marco Silva",
+          email: "candidate5@demo.example",
+          phone: "+92 304 8887766",
+          location: "Rawalpindi, Pakistan",
+          links: ["https://linkedin.com/in/marco-silva"],
+        },
+        skills: ["HTML", "CSS", "JavaScript", "React", "Git"],
         experience: [
           {
-            company: "WebCraft Agency",
-            title: "Junior Web Developer",
-            startDate: "2024-01",
-            endDate: null,
-            isCurrent: true,
-            description: "Developed frontend landing pages and client dashboards.",
-            technologies: ["HTML", "CSS", "JavaScript", "React"],
+            title: "Frontend Intern",
+            company: "TechSolutions",
+            duration: "2024 (6 months)",
+            highlights: ["Converted Figma mockups into responsive HTML/CSS pages."],
           },
         ],
         education: [
           {
-            institution: "Comsats Islamabad",
-            degree: "BS",
-            field: "Computer Science",
-            startYear: 2020,
-            endYear: 2024,
+            degree: "BS in Computer Science",
+            institution: "COMSATS",
+            year: "2024",
           },
         ],
-        projects: [
-          {
-            name: "Personal Portfolio & Blog",
-            description: "Interactive portfolio website built with React.",
-            technologies: ["React", "JavaScript", "CSS"],
-          },
-        ],
-        certifications: [],
       },
     },
   ];
 
-  for (const item of resumesSeedData) {
-    const user = await prisma.user.findUnique({
-      where: { email: item.email },
-      include: { candidateProfile: true },
+  for (const item of resumesData) {
+    const candidateUser = candidates.find((c) => c.email === item.email);
+    if (!candidateUser?.candidateProfile) continue;
+
+    // Check if resume already exists for candidate
+    const existing = await prisma.resume.findFirst({
+      where: { candidateId: candidateUser.candidateProfile.id },
     });
 
-    if (!user || !user.candidateProfile) continue;
-
-    const fileBuffer = createPdfBuffer(item.lines);
-    const fileName = `${crypto.randomUUID()}.pdf`;
-    const fullPath = path.join(storageDir, fileName);
-    await fs.writeFile(fullPath, fileBuffer);
-
-    const extractedText = await extractPdfText(fileBuffer);
-
-    await prisma.resume.create({
-      data: {
-        candidateId: user.candidateProfile.id,
-        originalFileName: item.originalFileName,
-        storagePath: fileName,
-        fileSizeBytes: fileBuffer.length,
-        extractedText,
-        parseStatus: "PARSED",
-        parsedData: item.parsedData as any,
-        parsedAt: new Date(),
-        uploadedAt: new Date(Date.now() - Math.floor(Math.random() * 7 * 86400000)),
-      },
-    });
+    if (existing) {
+      await prisma.resume.update({
+        where: { id: existing.id },
+        data: {
+          originalFileName: item.fileName,
+          storagePath: item.storagePath,
+          fileSizeBytes: item.size,
+          extractedText: item.extractedText,
+          parseStatus: "PARSED",
+          parsedData: item.parsedData,
+          parsedAt: new Date(),
+        },
+      });
+    } else {
+      await prisma.resume.create({
+        data: {
+          candidateId: candidateUser.candidateProfile.id,
+          originalFileName: item.fileName,
+          storagePath: item.storagePath,
+          fileSizeBytes: item.size,
+          extractedText: item.extractedText,
+          parseStatus: "PARSED",
+          parsedData: item.parsedData,
+          parsedAt: new Date(),
+        },
+      });
+    }
   }
 
   console.log("✅ 10-resumes.ts seed completed.");
