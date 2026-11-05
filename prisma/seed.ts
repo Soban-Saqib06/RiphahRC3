@@ -1,5 +1,10 @@
 import fs from "fs";
 import path from "path";
+import dotenv from "dotenv";
+
+dotenv.config({ path: path.join(process.cwd(), ".env.local") });
+dotenv.config({ path: path.join(process.cwd(), ".env") });
+
 import { prisma } from "../src/lib/db";
 
 async function wipeDatabase(): Promise<void> {

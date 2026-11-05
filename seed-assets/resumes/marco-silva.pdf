@@ -1,0 +1,32 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 926 >>
+stream
+BT /F1 11 Tf 40 760 Td (Marco Silva) Tj T* (Email: candidate5@demo.example | Phone: +92-345-1234567 | Location: Rawalpindi, Pakistan) Tj T* (Summary: Junior Web Developer with 1 year of practical web development experience in modern frontend tools and web development foundations.) Tj T* (Skills: JavaScript, React, HTML5, CSS3, Git, RESTful APIs.) Tj T* (Total Years Experience: 1) Tj T* (Experience:) Tj T* (- Junior Frontend Developer at StartApp Solutions \(2023 - Present\):) Tj T* (  Assisted in creating landing pages and React component widgets using JavaScript and CSS.) Tj T* (Projects:) Tj T* (- Task Tracker Web App: Personal project built in React allowing users to manage daily todo items.) Tj T* (- Portfolio Website: Responsive personal website built with HTML5, CSS3, and JavaScript.) Tj T* (Education:) Tj T* (- BS Information Technology, Pir Mehr Ali Shah Arid Agriculture University \(2019 - 2023\).) Tj ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1288
+%%EOF
