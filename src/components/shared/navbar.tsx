@@ -34,13 +34,14 @@ export function Navbar({ user, onLogout }: NavbarProps) {
 
   const isPublicPage = pathname === "/" || pathname?.startsWith("/auth");
 
-  // Recruiter nav items per wireframe R01
+  // Recruiter nav items per wireframe R01 & R10
   const recruiterLinks = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Jobs", href: "/jobs", icon: Briefcase },
     { label: "Candidates", href: "/applications", icon: Users },
-    { label: "Comparison", href: "/comparison", icon: BarChart3 },
-    { label: "Interviews", href: "/interviews", icon: Compass },
+    { label: "Comparison", href: "/comparison", icon: Compass },
+    { label: "Reports", href: "/analytics", icon: BarChart3 },
+    { label: "Interviews", href: "/interviews", icon: FileText },
   ];
 
   // Candidate nav items

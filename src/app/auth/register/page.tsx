@@ -36,7 +36,11 @@ export default function RegisterPage() {
       if (!res.ok || !data.success) {
         setError(data.error?.message || "Registration failed");
       } else {
-        router.push("/dashboard");
+        if (role === "CANDIDATE") {
+          router.push("/jobs");
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

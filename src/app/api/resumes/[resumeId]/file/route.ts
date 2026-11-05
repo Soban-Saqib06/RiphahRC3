@@ -3,7 +3,6 @@ import { requireUser } from "@/lib/auth";
 import { handleError } from "@/lib/api";
 import { getResumeFile } from "@/lib/features/resumes/service";
 
-export const runtime = "nodejs";
 
 export async function GET(
   _request: NextRequest,

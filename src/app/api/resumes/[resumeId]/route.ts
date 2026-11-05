@@ -7,7 +7,6 @@ import {
 } from "@/lib/features/resumes/service";
 import { UpdateParsedResumeSchema } from "@/lib/features/resumes/schema";
 
-export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
