@@ -1,0 +1,369 @@
+// Recruitment & Talent Intelligence Platform — Prisma/MySQL schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  RECRUITER
+  CANDIDATE
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  TEMPORARY
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  PARSED
+  ASSESSMENT_READY
+  IN_REVIEW
+  SHORTLISTED
+  REJECTED
+  INTERVIEW
+  SELECTED
+  WITHDRAWN
+}
+
+enum ResumeStatus {
+  UPLOADED
+  PROCESSING
+  PARSED
+  FAILED
+}
+
+enum AssessmentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum RequirementDimension {
+  SKILL
+  EXPERIENCE
+  PROJECT
+  QUALIFICATION
+}
+
+enum EvidenceStatus {
+  MATCHED
+  PARTIAL
+  NO_EVIDENCE
+}
+
+enum MatchRecommendation {
+  STRONG_MATCH
+  POSSIBLE_MATCH
+  WEAK_MATCH
+  INSUFFICIENT_EVIDENCE
+}
+
+enum InterviewStatus {
+  DRAFT
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum InterviewType {
+  PHONE
+  VIDEO
+  ONSITE
+  TECHNICAL
+  HR
+  OTHER
+}
+
+enum InterviewQuestionSource {
+  AI_GENERATED
+  MANUAL
+}
+
+model User {
+  id                String   @id @default(cuid()) @db.VarChar(191)
+  name              String   @db.VarChar(160)
+  email             String   @unique @db.VarChar(254)
+  passwordHash      String   @db.VarChar(255)
+  role              UserRole
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  candidateProfile  CandidateProfile?
+  recruiterProfile  RecruiterProfile?
+  jobs              Job[]                     @relation("RecruiterJobs")
+  statusChanges     ApplicationStatusHistory[] @relation("StatusChangedBy")
+  createdInterviews Interview[]                @relation("InterviewCreatedBy")
+
+  @@index([role, isActive])
+}
+
+model CandidateProfile {
+  id           String   @id @default(cuid()) @db.VarChar(191)
+  userId       String   @unique @db.VarChar(191)
+  phone        String?  @db.VarChar(40)
+  location     String?  @db.VarChar(160)
+  headline     String?  @db.VarChar(200)
+  summary      String?  @db.Text
+  linkedinUrl  String?  @db.VarChar(500)
+  portfolioUrl String?  @db.VarChar(500)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumes      Resume[]
+  applications Application[]
+
+  @@index([location])
+}
+
+model RecruiterProfile {
+  id           String   @id @default(cuid()) @db.VarChar(191)
+  userId       String   @unique @db.VarChar(191)
+  organization String?  @db.VarChar(180)
+  jobTitle     String?  @db.VarChar(120)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Job {
+  id                     String         @id @default(cuid()) @db.VarChar(191)
+  recruiterId            String         @db.VarChar(191)
+  title                  String         @db.VarChar(180)
+  department             String?        @db.VarChar(120)
+  location               String?        @db.VarChar(160)
+  employmentType         EmploymentType?
+  salaryMin              Decimal?       @db.Decimal(12, 2)
+  salaryMax              Decimal?       @db.Decimal(12, 2)
+  salaryCurrency         String?        @db.VarChar(3)
+  description            String         @db.LongText
+  experienceMinYears     Float?
+  experienceMaxYears     Float?
+  qualificationSummary   String?        @db.Text
+  skillsWeight           Int            @default(50)
+  experienceWeight       Int            @default(25)
+  projectRelevanceWeight Int            @default(15)
+  qualificationWeight    Int            @default(10)
+  status                 JobStatus      @default(DRAFT)
+  publishedAt            DateTime?
+  closedAt               DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  recruiter    User              @relation("RecruiterJobs", fields: [recruiterId], references: [id], onDelete: Restrict)
+  requirements JobRequirement[]
+  applications Application[]
+
+  @@index([recruiterId, status])
+  @@index([status, publishedAt])
+  @@index([title])
+  @@index([createdAt])
+}
+
+model JobRequirement {
+  id          String               @id @default(cuid()) @db.VarChar(191)
+  jobId       String               @db.VarChar(191)
+  dimension   RequirementDimension
+  title       String               @db.VarChar(180)
+  description String?              @db.Text
+  isRequired  Boolean              @default(true)
+  importance  Float                @default(1)
+  sortOrder   Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  job     Job                            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  results AssessmentRequirementResult[]
+
+  @@index([jobId, dimension, sortOrder])
+}
+
+model Resume {
+  id               String       @id @default(cuid()) @db.VarChar(191)
+  candidateId      String       @db.VarChar(191)
+  originalFilename String       @db.VarChar(255)
+  storageKey       String       @db.VarChar(500)
+  mimeType         String       @db.VarChar(100)
+  sizeBytes        Int
+  status           ResumeStatus @default(UPLOADED)
+  isCurrent        Boolean      @default(false)
+  uploadedAt       DateTime     @default(now())
+  parsedAt         DateTime?
+
+  candidate    CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  extraction   ResumeExtraction?
+  applications Application[]
+  assessments  Assessment[]
+
+  @@index([candidateId, isCurrent])
+  @@index([status])
+}
+
+model ResumeExtraction {
+  id                  String   @id @default(cuid()) @db.VarChar(191)
+  resumeId            String   @unique @db.VarChar(191)
+  extractedName       String?  @db.VarChar(160)
+  extractedEmail      String?  @db.VarChar(254)
+  extractedPhone      String?  @db.VarChar(40)
+  professionalSummary String?  @db.Text
+  skills              Json?
+  education           Json?
+  experience          Json?
+  projects            Json?
+  rawText             String   @db.LongText
+  extractionModel     String?  @db.VarChar(120)
+  extractionVersion   String?  @db.VarChar(80)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+}
+
+model Application {
+  id          String            @id @default(cuid()) @db.VarChar(191)
+  jobId       String            @db.VarChar(191)
+  candidateId String            @db.VarChar(191)
+  resumeId    String?           @db.VarChar(191)
+  status      ApplicationStatus @default(SUBMITTED)
+  coverLetter String?           @db.Text
+  appliedAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  withdrawnAt DateTime?
+
+  job          Job                         @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  candidate    CandidateProfile           @relation(fields: [candidateId], references: [id], onDelete: Restrict)
+  resume       Resume?                    @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  assessments  Assessment[]
+  statusHistory ApplicationStatusHistory[]
+  interviews   Interview[]
+
+  @@unique([jobId, candidateId])
+  @@index([jobId, status, appliedAt])
+  @@index([candidateId, appliedAt])
+  @@index([status, updatedAt])
+}
+
+model ApplicationStatusHistory {
+  id            String            @id @default(cuid()) @db.VarChar(191)
+  applicationId String            @db.VarChar(191)
+  fromStatus    ApplicationStatus?
+  toStatus      ApplicationStatus
+  note          String?           @db.VarChar(500)
+  changedById   String?           @db.VarChar(191)
+  createdAt     DateTime          @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedBy   User?       @relation("StatusChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([applicationId, createdAt])
+  @@index([changedById])
+}
+
+model Assessment {
+  id                    String                @id @default(cuid()) @db.VarChar(191)
+  applicationId         String                @db.VarChar(191)
+  resumeId              String                @db.VarChar(191)
+  status                AssessmentStatus      @default(PENDING)
+  skillsScore           Float?
+  experienceScore       Float?
+  projectRelevanceScore Float?
+  qualificationScore    Float?
+  overallScore          Float?
+  recommendation        MatchRecommendation?
+  summary               String?               @db.Text
+  explanation           String?               @db.LongText
+  model                 String?               @db.VarChar(120)
+  promptVersion         String?               @db.VarChar(80)
+  errorMessage          String?               @db.Text
+  rawResponse           Json?
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  application        Application                  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  resume             Resume                       @relation(fields: [resumeId], references: [id], onDelete: Restrict)
+  requirementResults AssessmentRequirementResult[]
+
+  @@index([applicationId, createdAt])
+  @@index([status, createdAt])
+  @@index([resumeId])
+}
+
+model AssessmentRequirementResult {
+  id              String        @id @default(cuid()) @db.VarChar(191)
+  assessmentId    String        @db.VarChar(191)
+  requirementId   String        @db.VarChar(191)
+  evidenceStatus  EvidenceStatus
+  score           Float?
+  evidenceExcerpt String?       @db.Text
+  evidenceSection String?       @db.VarChar(100)
+  evidenceStart   Int?
+  evidenceEnd     Int?
+  explanation     String?       @db.Text
+  createdAt       DateTime      @default(now())
+
+  assessment  Assessment     @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  requirement JobRequirement @relation(fields: [requirementId], references: [id], onDelete: Restrict)
+
+  @@unique([assessmentId, requirementId])
+  @@index([requirementId, evidenceStatus])
+}
+
+model Interview {
+  id                    String          @id @default(cuid()) @db.VarChar(191)
+  applicationId         String          @db.VarChar(191)
+  createdById           String          @db.VarChar(191)
+  status                InterviewStatus @default(DRAFT)
+  type                  InterviewType   @default(OTHER)
+  scheduledAt           DateTime?
+  durationMinutes       Int?
+  interviewerName       String?         @db.VarChar(160)
+  interviewerEmail      String?         @db.VarChar(254)
+  locationOrMeetingLink String?         @db.VarChar(500)
+  notes                 String?         @db.Text
+  feedback              String?         @db.Text
+  decision              String?         @db.VarChar(80)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  application Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdBy   User                @relation("InterviewCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  questions   InterviewQuestion[]
+
+  @@index([applicationId, scheduledAt])
+  @@index([status, scheduledAt])
+}
+
+model InterviewQuestion {
+  id          String                  @id @default(cuid()) @db.VarChar(191)
+  interviewId String                  @db.VarChar(191)
+  question    String                  @db.Text
+  category    String?                 @db.VarChar(100)
+  source      InterviewQuestionSource @default(AI_GENERATED)
+  sortOrder   Int                     @default(0)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@index([interviewId, sortOrder])
+}
