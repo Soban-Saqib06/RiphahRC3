@@ -6,3 +6,9 @@
 {"timestamp":"00:00:34.800","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
 {"timestamp":"00:02:47.022","source":"Server","level":"LOG","message":"✓ Compiled in 370ms"}
 {"timestamp":"00:12:11.068","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
+{"timestamp":"00:23:07.536","source":"Server","level":"LOG","message":"  Reload env: .env"}
+{"timestamp":"00:26:45.890","source":"Server","level":"LOG","message":"○ Compiling /api/auth/login ..."}
+{"timestamp":"00:27:06.065","source":"Server","level":"ERROR","message":"⨯ ./src/app/api/auth/login/route.ts:6:14\nError: Route segment config \"runtime\" is not compatible with `nextConfig.cacheComponents`. Please remove it.\n  4 | import { loginUser } from \"@/lib/features/auth/service\";\n  5 |\n> 6 | export const runtime = \"nodejs\";\n    |              ^^^^^^^\n  7 |\n  8 | export async function POST(req: NextRequest) {\n  9 |   try {\n\nEcmascript file had an error\n\n"}
+{"timestamp":"00:27:09.125","source":"Server","level":"LOG","message":"○ Compiling /_error ..."}
+{"timestamp":"00:30:35.790","source":"Server","level":"LOG","message":"✓ Compiled in 485ms"}
+{"timestamp":"00:32:52.658","source":"Server","level":"LOG","message":"✓ Compiled in 219ms"}
