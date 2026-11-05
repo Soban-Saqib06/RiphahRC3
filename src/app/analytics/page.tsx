@@ -9,10 +9,8 @@ import {
   ListChecks,
   TrendingUp,
   Minus,
-  Briefcase,
   ChevronDown,
   RotateCcw,
-  Sparkles,
 } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
@@ -22,7 +20,7 @@ import { TalentClusterMap } from "@/components/analytics/talent-cluster-map";
 import type { AnalyticsDTO } from "@/types/analytics";
 import type { UserDTO } from "@/lib/dto";
 
-export default function AnalyticsPage() {
+function AnalyticsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialJobId = searchParams.get("jobId") || "";
@@ -293,5 +291,19 @@ export default function AnalyticsPage() {
       {/* Footer */}
       <Footer />
     </div>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#F5F2EC]">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#D97745] border-t-transparent" />
+        </div>
+      }
+    >
+      <AnalyticsPageContent />
+    </React.Suspense>
   );
 }

@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Filter,
   List,
-  ScatterChart as ScatterIcon,
   ChevronDown,
   X,
   ExternalLink,

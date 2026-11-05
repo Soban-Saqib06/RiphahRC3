@@ -4,8 +4,6 @@ import { ok, handleError } from "@/lib/api";
 import { AnalyticsQuerySchema } from "@/lib/features/analytics/schema";
 import { getAnalyticsData } from "@/lib/features/analytics/service";
 
-export const runtime = "nodejs";
-
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireUser(["RECRUITER"]);

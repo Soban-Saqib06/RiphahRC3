@@ -32,7 +32,6 @@ export function Navbar({ user, onLogout }: NavbarProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const isPublicPage = pathname === "/" || pathname?.startsWith("/auth");
 
   // Recruiter nav items per wireframe R01 & R10
   const recruiterLinks = [

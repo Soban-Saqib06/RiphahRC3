@@ -32,7 +32,7 @@ import type {
   UserDTO,
 } from "@/lib/dto";
 
-export default function ApplicationDetailPage() {
+function ApplicationDetailPageContent() {
   const params = useParams();
   const applicationId = params?.applicationId as string;
 
@@ -484,5 +484,19 @@ export default function ApplicationDetailPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function ApplicationDetailPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#F5F2EC]">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#D97745] border-t-transparent" />
+        </div>
+      }
+    >
+      <ApplicationDetailPageContent />
+    </React.Suspense>
   );
 }

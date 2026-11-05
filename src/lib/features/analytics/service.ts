@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/db";
-import { AppError } from "@/lib/api";
 
 import type {
   ClusterCategory,
