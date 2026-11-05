@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -38,7 +38,7 @@ import type {
 
 type TabKey = "assessment" | "resume" | "timeline" | "interviews";
 
-export default function ApplicationDetailPage() {
+function ApplicationDetailContent() {
   const params = useParams();
   const applicationId = params?.applicationId as string;
 
@@ -425,5 +425,22 @@ export default function ApplicationDetailPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function ApplicationDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col bg-[#F5F2EC] items-center justify-center p-8">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#D97745]" />
+            <p className="text-xs text-[#77776E]">Loading application...</p>
+          </div>
+        </div>
+      }
+    >
+      <ApplicationDetailContent />
+    </Suspense>
   );
 }

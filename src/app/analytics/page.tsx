@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Clock,
@@ -22,7 +22,7 @@ import { TalentClusterMap } from "@/components/analytics/talent-cluster-map";
 import type { AnalyticsDTO } from "@/types/analytics";
 import type { UserDTO } from "@/lib/dto";
 
-export default function AnalyticsPage() {
+function AnalyticsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialJobId = searchParams.get("jobId") || "";
@@ -293,5 +293,19 @@ export default function AnalyticsPage() {
       {/* Footer */}
       <Footer />
     </div>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col bg-[#F5F2EC] items-center justify-center p-8 text-xs text-[#77776E]">
+          Loading analytics...
+        </div>
+      }
+    >
+      <AnalyticsContent />
+    </Suspense>
   );
 }

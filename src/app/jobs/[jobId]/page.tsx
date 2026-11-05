@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -23,7 +23,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ApplyModal } from "@/components/candidate/apply-modal";
 import type { JobDetailDTO, UserDTO } from "@/lib/dto";
 
-export default function JobDetailPage() {
+function JobDetailContent() {
   const router = useRouter();
   const params = useParams();
   const jobId = params?.jobId as string;
@@ -380,5 +380,19 @@ export default function JobDetailPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function JobDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col bg-[#F5F2EC] items-center justify-center p-8 text-xs text-[#77776E]">
+          Loading vacancy...
+        </div>
+      }
+    >
+      <JobDetailContent />
+    </Suspense>
   );
 }
