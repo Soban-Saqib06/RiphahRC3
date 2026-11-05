@@ -20,6 +20,7 @@ import { Navbar } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PageHeader } from "@/components/shared/page-header";
+import { ApplyModal } from "@/components/candidate/apply-modal";
 import type { JobDetailDTO, UserDTO } from "@/lib/dto";
 
 export default function JobDetailPage() {
@@ -30,6 +31,7 @@ export default function JobDetailPage() {
   const [currentUser, setCurrentUser] = useState<UserDTO | null>(null);
   const [job, setJob] = useState<JobDetailDTO | null>(null);
   const [myApplication, setMyApplication] = useState<{ id: string; status: string } | null>(null);
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -199,12 +201,13 @@ export default function JobDetailPage() {
                         Applied: {myApplication.status}
                       </span>
                     ) : (
-                      <Link
-                        href={`/profile`}
-                        className="rounded-md bg-[#D97745] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#C46332] transition-colors"
+                      <button
+                        type="button"
+                        onClick={() => setIsApplyModalOpen(true)}
+                        className="rounded-md bg-[#D97745] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#C46332] transition-colors cursor-pointer"
                       >
                         Apply for Position
-                      </Link>
+                      </button>
                     )
                   )}
                 </div>
@@ -361,6 +364,19 @@ export default function JobDetailPage() {
           </>
         )}
       </main>
+
+      {job && (
+        <ApplyModal
+          jobId={job.id}
+          jobTitle={job.title}
+          isOpen={isApplyModalOpen}
+          onClose={() => setIsApplyModalOpen(false)}
+          onSuccess={() => {
+            setIsApplyModalOpen(false);
+            loadJob();
+          }}
+        />
+      )}
 
       <Footer />
     </div>

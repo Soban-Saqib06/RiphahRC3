@@ -12,3 +12,8 @@
 {"timestamp":"00:27:09.125","source":"Server","level":"LOG","message":"○ Compiling /_error ..."}
 {"timestamp":"00:30:35.790","source":"Server","level":"LOG","message":"✓ Compiled in 485ms"}
 {"timestamp":"00:32:52.658","source":"Server","level":"LOG","message":"✓ Compiled in 219ms"}
+{"timestamp":"00:40:50.523","source":"Server","level":"LOG","message":"✓ Compiled in 366ms"}
+{"timestamp":"00:47:29.397","source":"Server","level":"LOG","message":"✓ Compiled in 1077ms"}
+{"timestamp":"00:50:03.636","source":"Server","level":"LOG","message":"✓ Compiled in 664ms"}
+{"timestamp":"00:52:18.426","source":"Server","level":"LOG","message":"✓ Compiled in 548ms"}
+{"timestamp":"00:58:03.719","source":"Server","level":"ERROR","message":"⨯ ./src/app/api/profile/route.ts:10:14\nError: Route segment config \"runtime\" is not compatible with `nextConfig.cacheComponents`. Please remove it.\n   8 | } from \"@/lib/features/profile/service\";\n   9 |\n> 10 | export const runtime = \"nodejs\";\n     |              ^^^^^^^\n  11 |\n  12 | export async function GET() {\n  13 |   try {\n\nEcmascript file had an error\n\n"}
