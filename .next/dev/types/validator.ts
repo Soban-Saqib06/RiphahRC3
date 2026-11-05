@@ -41,6 +41,16 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   viewport?: any
 } & ParamMatchingExports<Route>
 
+type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRoutes> = {
+  GET?: (request: NextRequest, context: { params: Promise<ParamMap[Route]> }) => Promise<Response | void> | Response | void
+  POST?: (request: NextRequest, context: { params: Promise<ParamMap[Route]> }) => Promise<Response | void> | Response | void
+  PUT?: (request: NextRequest, context: { params: Promise<ParamMap[Route]> }) => Promise<Response | void> | Response | void
+  PATCH?: (request: NextRequest, context: { params: Promise<ParamMap[Route]> }) => Promise<Response | void> | Response | void
+  DELETE?: (request: NextRequest, context: { params: Promise<ParamMap[Route]> }) => Promise<Response | void> | Response | void
+  HEAD?: (request: NextRequest, context: { params: Promise<ParamMap[Route]> }) => Promise<Response | void> | Response | void
+  OPTIONS?: (request: NextRequest, context: { params: Promise<ParamMap[Route]> }) => Promise<Response | void> | Response | void
+}
+
 
 // Validate ../../../src/app/applications/[applicationId]/page.tsx
 {
@@ -246,7 +256,65 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
+// Validate ../../../src/app/api/assessments/[applicationId]/override/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/assessments/[applicationId]/override">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/assessments/[applicationId]/override/route.js")
+  type __Check = __IsExpected<typeof handler>
+  
+  // @ts-ignore
+  type __Unused = __Check
+}
 
+// Validate ../../../src/app/api/assessments/[applicationId]/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/assessments/[applicationId]">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/assessments/[applicationId]/route.js")
+  type __Check = __IsExpected<typeof handler>
+  
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../src/app/api/resumes/[resumeId]/file/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/resumes/[resumeId]/file">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/resumes/[resumeId]/file/route.js")
+  type __Check = __IsExpected<typeof handler>
+  
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../src/app/api/resumes/[resumeId]/reparse/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/resumes/[resumeId]/reparse">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/resumes/[resumeId]/reparse/route.js")
+  type __Check = __IsExpected<typeof handler>
+  
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../src/app/api/resumes/[resumeId]/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/resumes/[resumeId]">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/resumes/[resumeId]/route.js")
+  type __Check = __IsExpected<typeof handler>
+  
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../src/app/api/resumes/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/resumes">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/resumes/route.js")
+  type __Check = __IsExpected<typeof handler>
+  
+  // @ts-ignore
+  type __Unused = __Check
+}
 
 
 
