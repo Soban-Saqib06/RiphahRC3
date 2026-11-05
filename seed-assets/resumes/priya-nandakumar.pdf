@@ -1,0 +1,32 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1180 >>
+stream
+BT /F1 11 Tf 40 760 Td (Priya Nandakumar) Tj T* (Email: candidate2@demo.example | Phone: +92-321-9988776 | Location: Islamabad, Pakistan) Tj T* (Summary: Full Stack and API Engineer with 3 years of hands-on experience in Python web services, relational databases, and cloud deployments.) Tj T* (Skills: Python, FastAPI, Flask, MySQL, Git, REST API, Kubernetes deployments, JavaScript.) Tj T* (Total Years Experience: 3) Tj T* (Experience:) Tj T* (- API Engineer at DataMinds \(2021 - Present\):) Tj T* (  Architected high-speed RESTful services using Python and FastAPI. Managed relational tables in MySQL.) Tj T* (  Deployed container pods to production via Kubernetes deployments. Version control using Git.) Tj T* (- Web Developer at Nexus Soft \(2020 - 2021\):) Tj T* (  Maintained internal dashboard services in Python Flask and MySQL.) Tj T* (Projects:) Tj T* (- Micro-Search Service: Fast search indexer implemented in Python and FastAPI with MySQL caching.) Tj T* (- Telemetry Collector: Event telemetry pipeline packaged into containers and Kubernetes deployments.) Tj T* (Education:) Tj T* (- BS Software Engineering, COMSATS University Islamabad \(2016 - 2020\).) Tj ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1543
+%%EOF

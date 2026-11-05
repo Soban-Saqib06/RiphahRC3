@@ -1,0 +1,32 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1339 >>
+stream
+BT /F1 11 Tf 40 760 Td (Ethan Calder) Tj T* (Email: candidate1@demo.example | Phone: +92-300-1122334 | Location: Lahore, Pakistan) Tj T* (Summary: Senior Backend Engineer with 4 years of experience building scalable backend microservices, REST APIs, and database architectures.) Tj T* (Skills: Python, Django, PostgreSQL \(Postgres\), Docker, docker-compose, Git, REST API design, Redis, Celery.) Tj T* (Total Years Experience: 4) Tj T* (Experience:) Tj T* (- Senior Software Engineer at FinTech Horizons \(2022 - Present\):) Tj T* (  Led backend microservice design using Python and Django. Optimized Postgres queries reducing p95 latency by 40%.) Tj T* (  Containerized multi-tenant services using Docker and docker-compose with automated CI/CD pipelines.) Tj T* (- Backend Developer at CloudCraft \(2020 - 2022\):) Tj T* (  Developed core REST API endpoints in Django. Managed database schemas and migrations in PostgreSQL with Git version control.) Tj T* (Projects:) Tj T* (- Scalable Payment Gateway: High-throughput payment processing engine in Python, Django, and PostgreSQL.) Tj T* (- Containerized Log Ingestion: Ingestion service deployed with Docker and docker-compose handling 50k events per minute.) Tj T* (Education:) Tj T* (- BS Computer Science, National University of Computer and Emerging Sciences \(2016 - 2020\).) Tj ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1702
+%%EOF

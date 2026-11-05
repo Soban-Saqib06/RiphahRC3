@@ -1,0 +1,32 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1239 >>
+stream
+BT /F1 11 Tf 40 760 Td (Lena Okafor) Tj T* (Email: candidate4@demo.example | Phone: +92-301-4455667 | Location: Lahore, Pakistan) Tj T* (Summary: Senior Frontend Engineer with 4 years of experience crafting accessible, responsive, and high-performance user interfaces.) Tj T* (Skills: React, TypeScript, Next.js, CSS, Tailwind CSS, Accessibility \(WCAG 2.1\), HTML5, JavaScript, Git.) Tj T* (Total Years Experience: 4) Tj T* (Experience:) Tj T* (- Senior Frontend Engineer at UXCraft Studios \(2022 - Present\):) Tj T* (  Built scalable React design systems and accessible web interfaces in TypeScript and Tailwind CSS.) Tj T* (  Ensured AA compliance with accessibility guidelines across all client web platforms.) Tj T* (- Frontend Developer at PixelWorks \(2020 - 2022\):) Tj T* (  Developed dynamic client applications in React and modern CSS with Git teamwork.) Tj T* (Projects:) Tj T* (- Accessible Component Library: Open-source component system built with React, TypeScript, and strict ARIA standards.) Tj T* (- Recruitment Portal UI: Responsive candidate portal featuring real-time status updates and fluid layouts.) Tj T* (Education:) Tj T* (- BS Computer Science, Lahore University of Management Sciences \(2016 - 2020\).) Tj ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1602
+%%EOF

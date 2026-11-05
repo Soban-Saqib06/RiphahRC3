@@ -109,7 +109,7 @@ decisions autonomously.
  2. Recruiter dashboard     Key recruitment KPIs,   High                   A
                           vacancies, application  
                           pipeline and interview  
-                          overview                
+                          overview.                
 
  3. Job management          Create and manage       High                   A
                           vacancies with core job 
@@ -161,7 +161,16 @@ decisions autonomously.
                           candidate records,      
                           including three         
                           candidates for the      
-                          demonstration scenario  
+                          demonstration scenario
+                           
+ 14. AI AutoReview          Recruiter can            Nice to Have/Extra
+                          set requirements for 
+                          things that must be in
+                          the application resume.
+                          These must be verified by
+                          Ai. Both the applicant and 
+                          reviewwer can get these 
+                          for each application.
   -----------------------------------------------------------------------
 
 ### 7.2 Matching Approach
