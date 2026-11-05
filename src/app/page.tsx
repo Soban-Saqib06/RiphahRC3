@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -13,7 +13,6 @@ import {
   Users,
   Compass,
   Layers,
-  Search,
   Filter,
 } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
@@ -26,6 +25,95 @@ import { LiveDemoModal } from "@/components/landing/live-demo-modal";
 export default function LandingPage() {
   const [activeDemoCandidate, setActiveDemoCandidate] = useState(0);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const lastScrollTimeRef = useRef(0);
+
+  // Helper to query all landing page sections marked for sliding navigation
+  const getLandingSections = useCallback((): HTMLElement[] => {
+    return Array.from(document.querySelectorAll<HTMLElement>("[data-landing-section]"));
+  }, []);
+
+  // Slide down to the next section
+  const slideToNextSection = useCallback(() => {
+    const sections = getLandingSections();
+    if (!sections.length) return;
+
+    // Find first section whose top edge is below the current viewport threshold (100px)
+    const nextSection = sections.find((section) => {
+      const rect = section.getBoundingClientRect();
+      return rect.top > 100;
+    });
+
+    if (nextSection) {
+      nextSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      // Reached the end of the sections: smooth scroll to the bottom of page
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [getLandingSections]);
+
+  // Slide up to the previous section
+  const slideToPrevSection = useCallback(() => {
+    const sections = getLandingSections();
+    if (!sections.length) return;
+
+    // Find sections strictly above the current viewport threshold (60px)
+    const prevSections = sections.filter((section) => {
+      const rect = section.getBoundingClientRect();
+      return rect.top < 60;
+    });
+
+    if (prevSections.length > 0) {
+      const targetSection = prevSections[prevSections.length - 1];
+      targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [getLandingSections]);
+
+  // Event listener on the arrow down (and arrow up) key to slide the site section by section
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Do not intercept if the live demo modal dialog is open
+      if (isDemoModalOpen) return;
+
+      // Do not intercept if modifier keys are pressed (e.g., Ctrl+Arrow, Alt+Arrow)
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+
+      // Do not intercept if focus is inside an interactive input, textarea, select, or editable element
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.tagName === "SELECT" ||
+          activeEl.isContentEditable ||
+          activeEl.getAttribute("role") === "combobox" ||
+          activeEl.closest('[role="dialog"]') !== null)
+      ) {
+        return;
+      }
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const now = Date.now();
+        if (now - lastScrollTimeRef.current < 400) return;
+        lastScrollTimeRef.current = now;
+        slideToNextSection();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const now = Date.now();
+        if (now - lastScrollTimeRef.current < 400) return;
+        lastScrollTimeRef.current = now;
+        slideToPrevSection();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDemoModalOpen, slideToNextSection, slideToPrevSection]);
 
   // Demo candidates strictly matching wireframe landing.jpeg
   const demoCandidates = [
@@ -125,34 +213,38 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
-          {/* Wireframe Vector Background Graphic on the right */}
-          <HeroVectorGraphic />
+        <section
+          id="hero"
+          data-landing-section
+          className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 scroll-mt-20"
+        >
+          {/* Wireframe Vector Background Graphic on the right with slide-in animation on loadup */}
+          <HeroVectorGraphic className="animate-landing-slide-right landing-delay-200" />
 
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Professional Left-Aligned Hero Content */}
             <div className="max-w-3xl text-left">
-              {/* Tagline Badge */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#ECC9B6] bg-[#F9ECE5] px-3.5 py-1 text-xs font-semibold text-[#D97745] mb-6 shadow-2xs">
+              {/* Tagline Badge - slide in on loadup */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#ECC9B6] bg-[#F9ECE5] px-3.5 py-1 text-xs font-semibold text-[#D97745] mb-6 shadow-2xs animate-landing-slide-down landing-delay-100">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Next-Generation Recruitment Intelligence</span>
               </div>
 
-              {/* Main Headline strictly matching wireframe */}
-              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#242522] leading-[1.12]">
+              {/* Main Headline strictly matching wireframe - slide in on loadup */}
+              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#242522] leading-[1.12] animate-landing-slide-up landing-delay-200">
                 AI-Assisted Recruitment &amp;{" "}
                 <br className="hidden sm:inline" />
                 <span className="text-[#D97745]">Talent Intelligence</span>
               </h1>
 
-              {/* Subhead */}
-              <p className="mt-6 text-lg sm:text-xl text-[#77776E] max-w-2xl leading-relaxed">
+              {/* Subhead - slide in on loadup */}
+              <p className="mt-6 text-lg sm:text-xl text-[#77776E] max-w-2xl leading-relaxed animate-landing-slide-up landing-delay-300">
                 Explainable candidate matching, resume evidence parsing, and streamlined
                 interview workflows while keeping recruiters in complete control.
               </p>
 
-              {/* Action Buttons strictly matching wireframe */}
-              <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-4">
+              {/* Action Buttons strictly matching wireframe - slide in on loadup */}
+              <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-4 animate-landing-slide-up landing-delay-400">
                 <Link
                   href="/auth/register"
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-[#D97745] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#C46332] transition-colors"
@@ -170,8 +262,8 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              {/* Editorial Trust Signals */}
-              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-[#77776E] font-medium">
+              {/* Editorial Trust Signals - slide in on loadup */}
+              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-[#77776E] font-medium animate-landing-slide-up landing-delay-500">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-[#3D784A]" />
                   Transparent 50/25/15/10 rubric
@@ -185,12 +277,28 @@ export default function LandingPage() {
                   Recruiter retains 100% authority
                 </span>
               </div>
+
+              {/* Subtle Interactive Section Navigation Pill / Hint */}
+              <div className="mt-7 flex items-center gap-2 text-xs text-[#77776E] animate-landing-slide-up landing-delay-600">
+                <button
+                  type="button"
+                  onClick={slideToNextSection}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#E2DDD5] bg-white/85 px-3 py-1 shadow-2xs hover:bg-white hover:text-[#D97745] transition-all cursor-pointer group"
+                  title="Slide down to next section (or press ↓ on your keyboard)"
+                >
+                  <span className="flex items-center justify-center h-4 w-4 rounded bg-[#FAF8F5] border border-[#E2DDD5] font-mono text-[10px] font-bold text-[#242522] group-hover:border-[#D97745] group-hover:text-[#D97745] transition-colors">
+                    ↓
+                  </span>
+                  <span>Press <kbd className="font-semibold text-[#242522]">Down Arrow</kbd> to slide down section by section</span>
+                </button>
+              </div>
             </div>
 
             {/* INTERACTIVE HERO MOCKUP CARD matching wireframe landing.jpeg */}
             <div
               id="interactive-demo"
-              className="mt-16 mx-auto max-w-5xl rounded-2xl border border-[#E2DDD5] bg-white shadow-lg overflow-hidden text-left"
+              data-landing-section
+              className="mt-16 mx-auto max-w-5xl rounded-2xl border border-[#E2DDD5] bg-white shadow-lg overflow-hidden text-left scroll-mt-20 animate-landing-slide-up landing-delay-600"
             >
               {/* Mockup Header */}
               <div className="flex flex-wrap items-center justify-between border-b border-[#E2DDD5] bg-[#FAF8F5] px-6 py-3.5 gap-4">
@@ -367,7 +475,11 @@ export default function LandingPage() {
         </section>
 
         {/* KEY CAPABILITIES strictly matching wireframe */}
-        <section id="capabilities" className="py-16 sm:py-24 border-t border-[#E2DDD5] bg-[#FAF8F5]">
+        <section
+          id="capabilities"
+          data-landing-section
+          className="py-16 sm:py-24 border-t border-[#E2DDD5] bg-[#FAF8F5] scroll-mt-20"
+        >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Left-Aligned Section Header */}
             <div className="text-left max-w-2xl mb-12">
@@ -426,7 +538,11 @@ export default function LandingPage() {
         </section>
 
         {/* HOW IT WORKS: 3-STEP PROCESS strictly matching wireframe */}
-        <section id="how-it-works" className="py-16 sm:py-24 border-t border-[#E2DDD5] bg-[#F5F2EC]">
+        <section
+          id="how-it-works"
+          data-landing-section
+          className="py-16 sm:py-24 border-t border-[#E2DDD5] bg-[#F5F2EC] scroll-mt-20"
+        >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Left-Aligned Section Header */}
             <div className="text-left max-w-2xl mb-12">
@@ -494,7 +610,11 @@ export default function LandingPage() {
         </section>
 
         {/* HUMAN-LED CALLOUT strictly matching wireframe */}
-        <section id="benefits" className="py-16 sm:py-20 border-t border-[#E2DDD5] bg-[#E8E3DA]/50">
+        <section
+          id="benefits"
+          data-landing-section
+          className="py-16 sm:py-20 border-t border-[#E2DDD5] bg-[#E8E3DA]/50 scroll-mt-20"
+        >
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <div className="rounded-2xl border border-[#DDD8CE] bg-white p-8 sm:p-12 shadow-sm text-left">
               <div className="flex flex-col md:flex-row items-center gap-8 lg:gap-12">
@@ -532,7 +652,11 @@ export default function LandingPage() {
         </section>
 
         {/* CTA BANNER strictly matching wireframe */}
-        <section className="bg-[#D97745] text-white py-16 sm:py-20">
+        <section
+          id="cta"
+          data-landing-section
+          className="bg-[#D97745] text-white py-16 sm:py-20 scroll-mt-20"
+        >
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 text-left">
               <div className="space-y-3 max-w-2xl">
@@ -564,7 +688,10 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <Footer />
+      {/* Footer Section */}
+      <div id="footer" data-landing-section className="scroll-mt-20">
+        <Footer />
+      </div>
 
       {/* Accessible Interactive Live Demo Dialog Modal */}
       <LiveDemoModal

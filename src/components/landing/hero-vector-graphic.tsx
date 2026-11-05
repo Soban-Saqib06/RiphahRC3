@@ -1,9 +1,13 @@
 import React from "react";
 
-export function HeroVectorGraphic() {
+interface HeroVectorGraphicProps {
+  className?: string;
+}
+
+export function HeroVectorGraphic({ className = "" }: HeroVectorGraphicProps) {
   return (
     <div
-      className="absolute top-0 right-0 w-full max-w-[620px] lg:max-w-[740px] xl:max-w-[840px] h-[480px] sm:h-[560px] pointer-events-none select-none overflow-hidden -z-0 opacity-80 sm:opacity-95"
+      className={`absolute top-0 right-0 w-full max-w-[620px] lg:max-w-[740px] xl:max-w-[840px] h-[480px] sm:h-[560px] pointer-events-none select-none overflow-hidden -z-0 opacity-80 sm:opacity-95 ${className}`}
       aria-hidden="true"
     >
       <svg

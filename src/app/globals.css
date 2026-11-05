@@ -103,6 +103,7 @@
   html {
     @apply font-sans;
     background-color: #F5F2EC;
+    scroll-behavior: smooth;
   }
 }
 
@@ -125,4 +126,104 @@
 
 .animate-liquid-wave-slow {
   animation: waveMotion 9s cubic-bezier(0.36, 0.45, 0.63, 0.53) -2s infinite;
+}
+
+/* =========================================================================
+   Landing Page Entrance Slide-in Animations (Loadup Only)
+   ========================================================================= */
+@keyframes landingSlideInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landingSlideInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landingSlideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes landingSlideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-landing-slide-up {
+  animation: landingSlideInUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-landing-slide-down {
+  animation: landingSlideInDown 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-landing-slide-right {
+  animation: landingSlideInRight 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-landing-slide-left {
+  animation: landingSlideInLeft 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Landing stagger delay utilities */
+.landing-delay-100 {
+  animation-delay: 100ms;
+}
+.landing-delay-150 {
+  animation-delay: 150ms;
+}
+.landing-delay-200 {
+  animation-delay: 200ms;
+}
+.landing-delay-300 {
+  animation-delay: 300ms;
+}
+.landing-delay-400 {
+  animation-delay: 400ms;
+}
+.landing-delay-500 {
+  animation-delay: 500ms;
+}
+.landing-delay-600 {
+  animation-delay: 600ms;
+}
+.landing-delay-700 {
+  animation-delay: 700ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-landing-slide-up,
+  .animate-landing-slide-down,
+  .animate-landing-slide-right,
+  .animate-landing-slide-left {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
 }
