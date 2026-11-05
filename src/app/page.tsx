@@ -9,90 +9,115 @@ import {
   CheckCircle2,
   Play,
   ArrowRight,
-  ShieldCheck,
   Sparkles,
   Users,
   Compass,
   Layers,
-  ChevronRight,
+  Search,
+  Filter,
 } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
 import { LiquidScoreCircle } from "@/components/shared/liquid-score-circle";
+import { HeroVectorGraphic } from "@/components/landing/hero-vector-graphic";
+import { HumanRobotIllustration } from "@/components/landing/human-robot-illustration";
+import { LiveDemoModal } from "@/components/landing/live-demo-modal";
 
 export default function LandingPage() {
   const [activeDemoCandidate, setActiveDemoCandidate] = useState(0);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
+  // Demo candidates strictly matching wireframe landing.jpeg
   const demoCandidates = [
     {
-      name: "Ethan Calder",
-      role: "Senior Backend Developer",
+      name: "Elias Thorne",
+      role: "Senior Software Engineer",
       matchScore: 94,
-      skillsMatch: 95,
-      experienceRelevance: 92,
-      qualifications: 95,
+      skillsMatch: 92,
+      experienceRelevance: 95,
+      cultureFit: 85,
       evidence: [
         {
-          quote: "Led architecture and development of high-throughput distributed microservices in Python & Django.",
-          category: "Backend Architecture",
-          confidence: "95% Match",
-          reason: "Directly matches Python & Django required proficiency",
+          quote:
+            "Led a team of 5 developers on a cloud migration project, and developed asynchronous microservices in Python & FastAPI.",
+          category: "Leadership",
+          confidence: "95% Confidence",
+          reason: "Matched based on 'Led a team' and 'cloud migration project' experience",
         },
         {
-          quote: "Architected PostgreSQL database with partitioned tables and optimized indexing for sub-10ms queries.",
-          category: "Database Engineering",
-          confidence: "92% Match",
-          reason: "Matches PostgreSQL production performance requirement",
+          quote:
+            "Architected PostgreSQL database with partitioned tables and optimized indexing for sub-10ms queries.",
+          category: "Cloud Computing",
+          confidence: "90% Confidence",
+          reason: "Matched based on 'cloud migration project' and scalable systems experience",
         },
         {
-          quote: "Configured multi-stage Docker builds and automated CI/CD pipelines reducing deployment time by 40%.",
-          category: "Containerization",
-          confidence: "90% Match",
-          reason: "Matches Docker containerization & orchestration needs",
+          quote:
+            "Configured multi-stage Docker builds and automated CI/CD pipelines reducing deployment time by 40%.",
+          category: "DevOps & Systems",
+          confidence: "92% Confidence",
+          reason: "Directly satisfies containerization and cloud deployment requirements",
         },
       ],
     },
     {
-      name: "Priya Nandakumar",
+      name: "Sofia Kosta",
       role: "Full Stack & API Engineer",
-      matchScore: 88,
-      skillsMatch: 86,
+      matchScore: 89,
+      skillsMatch: 88,
       experienceRelevance: 90,
-      qualifications: 88,
+      cultureFit: 86,
       evidence: [
         {
-          quote: "Built asynchronous RESTful APIs using Python and FastAPI with automated OpenAPI schema generation.",
-          category: "API Engineering",
-          confidence: "88% Match",
-          reason: "FastAPI is semantic equivalent for Django REST architecture",
+          quote:
+            "Built asynchronous RESTful APIs using Python and FastAPI with automated OpenAPI schema generation.",
+          category: "API Architecture",
+          confidence: "90% Match",
+          reason: "Directly matches high-throughput microservices requirements",
         },
         {
-          quote: "Containerized 12 core services using Docker and managed cloud deployments on AWS ECS.",
-          category: "DevOps & Cloud",
-          confidence: "90% Match",
-          reason: "Verifiable Docker experience in enterprise production",
+          quote:
+            "Containerized core services using Docker and managed cloud deployments with automated monitoring.",
+          category: "Cloud & Containerization",
+          confidence: "88% Match",
+          reason: "Demonstrated production container workflow matching rubric",
         },
       ],
     },
     {
-      name: "Jonas Weber",
+      name: "Kenji Sato",
       role: "Backend Developer",
-      matchScore: 68,
-      skillsMatch: 65,
-      experienceRelevance: 70,
-      qualifications: 75,
+      matchScore: 87,
+      skillsMatch: 85,
+      experienceRelevance: 88,
+      cultureFit: 84,
       evidence: [
         {
-          quote: "Developed enterprise banking microservices using Java and Spring Boot with relational databases.",
-          category: "Enterprise Systems",
-          confidence: "65% Partial",
-          reason: "Strong backend background; requires transition to Python stack",
+          quote:
+            "Engineered backend microservices in Python, managing PostgreSQL schemas and distributed Redis caching.",
+          category: "System Design",
+          confidence: "88% Match",
+          reason: "Strong alignment with backend service architecture and query optimization",
+        },
+        {
+          quote:
+            "Automated unit and integration test suites achieving 92% code coverage with CI test runners.",
+          category: "Code Quality & Testing",
+          confidence: "85% Match",
+          reason: "Satisfies verification requirements for robust production systems",
         },
       ],
     },
   ];
 
   const currentCandidate = demoCandidates[activeDemoCandidate];
+
+  const scrollToDemo = () => {
+    const el = document.getElementById("interactive-demo");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F5F2EC]">
@@ -101,79 +126,114 @@ export default function LandingPage() {
       <main className="flex-1">
         {/* HERO SECTION */}
         <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-            {/* Tagline Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#ECC9B6] bg-[#F9ECE5] px-3.5 py-1 text-xs font-semibold text-[#D97745] mb-6">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Next-Generation Recruitment Intelligence</span>
+          {/* Wireframe Vector Background Graphic on the right */}
+          <HeroVectorGraphic />
+
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {/* Professional Left-Aligned Hero Content */}
+            <div className="max-w-3xl text-left">
+              {/* Tagline Badge */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#ECC9B6] bg-[#F9ECE5] px-3.5 py-1 text-xs font-semibold text-[#D97745] mb-6 shadow-2xs">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Next-Generation Recruitment Intelligence</span>
+              </div>
+
+              {/* Main Headline strictly matching wireframe */}
+              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#242522] leading-[1.12]">
+                AI-Assisted Recruitment &amp;{" "}
+                <br className="hidden sm:inline" />
+                <span className="text-[#D97745]">Talent Intelligence</span>
+              </h1>
+
+              {/* Subhead */}
+              <p className="mt-6 text-lg sm:text-xl text-[#77776E] max-w-2xl leading-relaxed">
+                Explainable candidate matching, resume evidence parsing, and streamlined
+                interview workflows while keeping recruiters in complete control.
+              </p>
+
+              {/* Action Buttons strictly matching wireframe */}
+              <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-4">
+                <Link
+                  href="/auth/register"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-[#D97745] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#C46332] transition-colors"
+                >
+                  Get Started
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setIsDemoModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-[#CDC7BD] bg-white px-6 py-3 text-sm font-semibold text-[#242522] shadow-2xs hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                >
+                  <Play className="h-4 w-4 text-[#D97745] fill-[#D97745]" />
+                  Watch Demo
+                </button>
+              </div>
+
+              {/* Editorial Trust Signals */}
+              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-[#77776E] font-medium">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#3D784A]" />
+                  Transparent 50/25/15/10 rubric
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#3D784A]" />
+                  Verifiable resume excerpts
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#3D784A]" />
+                  Recruiter retains 100% authority
+                </span>
+              </div>
             </div>
 
-            {/* Main Headline */}
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#242522] max-w-4xl mx-auto leading-[1.12]">
-              AI-Assisted Recruitment &amp;{" "}
-              <span className="text-[#D97745]">Talent Intelligence</span>
-            </h1>
-
-            {/* Subhead */}
-            <p className="mt-6 text-lg sm:text-xl text-[#77776E] max-w-2xl mx-auto leading-relaxed">
-              Explainable candidate matching, resume evidence parsing, and streamlined
-              interview workflows while keeping recruiters in complete control.
-            </p>
-
-            {/* Action Buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/auth/register"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md bg-[#D97745] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#C46332] transition-colors"
-              >
-                Get Started
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/dashboard"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-[#CDC7BD] bg-white px-6 py-3 text-sm font-semibold text-[#242522] shadow-2xs hover:bg-[#FAF8F5] transition-colors"
-              >
-                <Play className="h-4 w-4 text-[#D97745] fill-[#D97745]" />
-                Explore Live Demo
-              </Link>
-            </div>
-
-            {/* INTERACTIVE HERO MOCKUP CARD */}
-            <div className="mt-16 mx-auto max-w-5xl rounded-2xl border border-[#E2DDD5] bg-white shadow-lg overflow-hidden text-left">
+            {/* INTERACTIVE HERO MOCKUP CARD matching wireframe landing.jpeg */}
+            <div
+              id="interactive-demo"
+              className="mt-16 mx-auto max-w-5xl rounded-2xl border border-[#E2DDD5] bg-white shadow-lg overflow-hidden text-left"
+            >
               {/* Mockup Header */}
-              <div className="flex flex-wrap items-center justify-between border-b border-[#E2DDD5] bg-[#FAF8F5] px-6 py-4 gap-4">
+              <div className="flex flex-wrap items-center justify-between border-b border-[#E2DDD5] bg-[#FAF8F5] px-6 py-3.5 gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#D97745] text-white">
                     <Compass className="h-4 w-4" />
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-[#242522]">
-                      Position: Backend Developer
+                      Job Position: Senior Software Engineer
                     </h2>
                     <p className="text-xs text-[#77776E]">
-                      Required: Python &bull; Django &bull; PostgreSQL &bull; Docker
+                      Required: Python &bull; FastAPI &bull; PostgreSQL &bull; Cloud Infrastructure
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="font-medium text-[#77776E]">Interactive Demo Preview</span>
-                  <Link
-                    href="/dashboard"
+                  <span className="hidden sm:inline font-medium text-[#77776E]">Interactive Preview</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsDemoModalOpen(true)}
                     className="rounded bg-[#D97745] px-3 py-1 font-semibold text-white hover:bg-[#C46332] transition-colors"
                   >
-                    Open Workspace
-                  </Link>
+                    Open Full Demo
+                  </button>
                 </div>
               </div>
 
               {/* Mockup Content */}
               <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-[#E2DDD5]">
-                {/* Left: Candidate List */}
+                {/* Left: Top Applicants List */}
                 <div className="md:col-span-4 p-5 bg-[#FAF8F5]/60 space-y-3">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#77776E]">
-                    Top Applicants ({demoCandidates.length})
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#77776E]">
+                      Top Applicants ({demoCandidates.length})
+                    </p>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#77776E] bg-white border border-[#E2DDD5] rounded px-2 py-0.5">
+                      <Filter className="h-3 w-3" />
+                      Match ▾
+                    </span>
+                  </div>
+
                   {demoCandidates.map((candidate, idx) => (
                     <button
                       key={candidate.name}
@@ -186,22 +246,27 @@ export default function LandingPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-bold text-[#242522]">
-                            {candidate.name}
-                          </p>
-                          <p className="text-xs text-[#77776E]">
-                            {candidate.role}
-                          </p>
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E8E3DA] border border-[#E2DDD5] font-bold text-xs text-[#242522]">
+                            {candidate.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-[#242522]">
+                              {idx + 1}. {candidate.name}
+                            </p>
+                            <p className="text-xs text-[#77776E]">
+                              {candidate.role}
+                            </p>
+                          </div>
                         </div>
                         <span className="rounded-full bg-[#F9ECE5] px-2 py-0.5 text-xs font-bold text-[#D97745]">
                           {candidate.matchScore}%
                         </span>
                       </div>
-                      {/* Mini Bar */}
+                      {/* Match Progress Bar */}
                       <div className="mt-2.5 h-1.5 w-full rounded-full bg-[#E8E3DA] overflow-hidden">
                         <div
-                          className="h-full bg-[#D97745] rounded-full"
+                          className="h-full bg-[#D97745] rounded-full transition-all duration-300"
                           style={{ width: `${candidate.matchScore}%` }}
                         />
                       </div>
@@ -209,7 +274,7 @@ export default function LandingPage() {
                   ))}
                 </div>
 
-                {/* Right: Candidate Assessment & Evidence */}
+                {/* Right: Candidate Assessment & Evidence Breakdown */}
                 <div className="md:col-span-8 p-6 space-y-6">
                   {/* Candidate Header & Liquid Match Score */}
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#E2DDD5]">
@@ -242,10 +307,10 @@ export default function LandingPage() {
                         </div>
                         <div className="rounded-lg border border-[#E2DDD5] bg-[#FAF8F5] px-3 py-1.5">
                           <span className="block text-[10px] text-[#77776E] uppercase font-semibold">
-                            Qual.
+                            Culture
                           </span>
                           <span className="text-sm font-bold text-[#242522]">
-                            {currentCandidate.qualifications}%
+                            {currentCandidate.cultureFit}%
                           </span>
                         </div>
                       </div>
@@ -259,11 +324,18 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  {/* Verbatim Evidence Breakdown */}
+                  {/* Verbatim Evidence Breakdown strictly matching wireframe */}
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#77776E] mb-3">
-                      Resume Evidence Breakdown (Verbatim Excerpts)
-                    </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#77776E]">
+                        Resume Evidence Breakdown
+                      </h4>
+                      <div className="text-[11px] text-[#77776E] hidden sm:flex gap-4">
+                        <span>Relevant Texts</span>
+                        <span>Explainable Reasoning</span>
+                      </div>
+                    </div>
+
                     <div className="space-y-3">
                       {currentCandidate.evidence.map((item, idx) => (
                         <div
@@ -294,81 +366,86 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* KEY CAPABILITIES */}
+        {/* KEY CAPABILITIES strictly matching wireframe */}
         <section id="capabilities" className="py-16 sm:py-24 border-t border-[#E2DDD5] bg-[#FAF8F5]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="font-heading text-3xl font-extrabold tracking-tight text-[#242522] sm:text-4xl">
+            {/* Left-Aligned Section Header */}
+            <div className="text-left max-w-2xl mb-12">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97745] bg-[#F9ECE5] px-2.5 py-1 rounded-md border border-[#ECC9B6] inline-block mb-3">
+                Core Capabilities
+              </span>
+              <h2 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight text-[#242522]">
                 Key Capabilities
               </h2>
-              <p className="mt-3 text-base text-[#77776E]">
+              <p className="mt-3 text-base text-[#77776E] leading-relaxed">
                 Built to elevate the recruiter experience with explainable intelligence and zero guesswork.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Capability 1 */}
-              <div className="rounded-2xl border border-[#E2DDD5] bg-white p-8 transition-shadow hover:shadow-sm">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E8E3DA] text-[#D97745] mb-5">
+              {/* Capability 1: Resume Parsing */}
+              <div className="rounded-2xl border border-[#E2DDD5] bg-white p-8 transition-all hover:shadow-md hover:border-[#D97745]/40 text-left">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F9ECE5] text-[#D97745] border border-[#ECC9B6] mb-5">
                   <FileText className="h-6 w-6" />
                 </div>
                 <h3 className="text-lg font-bold text-[#242522]">
                   Resume Parsing
                 </h3>
                 <p className="mt-2 text-sm text-[#77776E] leading-relaxed">
-                  Advanced parsing of PDF resumes, extracting verified work histories, project technologies,
-                  and skills with verbatim citation.
+                  Advanced parsing of resumes in any format, extracting key data points with high accuracy.
                 </p>
               </div>
 
-              {/* Capability 2 */}
-              <div className="rounded-2xl border border-[#E2DDD5] bg-white p-8 transition-shadow hover:shadow-sm">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E8E3DA] text-[#D97745] mb-5">
+              {/* Capability 2: Explainable AI Matching */}
+              <div className="rounded-2xl border border-[#E2DDD5] bg-white p-8 transition-all hover:shadow-md hover:border-[#D97745]/40 text-left">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F9ECE5] text-[#D97745] border border-[#ECC9B6] mb-5">
                   <Cpu className="h-6 w-6" />
                 </div>
                 <h3 className="text-lg font-bold text-[#242522]">
                   Explainable AI Matching
                 </h3>
                 <p className="mt-2 text-sm text-[#77776E] leading-relaxed">
-                  Transparent weighted scoring (50% skills, 25% experience, 15% projects, 10% qualifications)
-                  with verifiable evidence for every signal.
+                  Transparent, fair matching algorithms with clear reasoning behind every candidate.
                 </p>
               </div>
 
-              {/* Capability 3 */}
-              <div className="rounded-2xl border border-[#E2DDD5] bg-white p-8 transition-shadow hover:shadow-sm">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E8E3DA] text-[#D97745] mb-5">
+              {/* Capability 3: Candidate Pipeline */}
+              <div className="rounded-2xl border border-[#E2DDD5] bg-white p-8 transition-all hover:shadow-md hover:border-[#D97745]/40 text-left">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F9ECE5] text-[#D97745] border border-[#ECC9B6] mb-5">
                   <GitPullRequest className="h-6 w-6" />
                 </div>
                 <h3 className="text-lg font-bold text-[#242522]">
                   Candidate Pipeline
                 </h3>
                 <p className="mt-2 text-sm text-[#77776E] leading-relaxed">
-                  Seamlessly organize applicants from submission to interview scheduling, generating
-                  tailored interview questions along the way.
+                  Efficiently manage, track, and nurture your candidate pipeline from sourcing to hire.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* HOW IT WORKS */}
+        {/* HOW IT WORKS: 3-STEP PROCESS strictly matching wireframe */}
         <section id="how-it-works" className="py-16 sm:py-24 border-t border-[#E2DDD5] bg-[#F5F2EC]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="font-heading text-3xl font-extrabold tracking-tight text-[#242522] sm:text-4xl">
+            {/* Left-Aligned Section Header */}
+            <div className="text-left max-w-2xl mb-12">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97745] bg-[#F9ECE5] px-2.5 py-1 rounded-md border border-[#ECC9B6] inline-block mb-3">
+                Execution Workflow
+              </span>
+              <h2 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight text-[#242522]">
                 How It Works: 3-Step Process
               </h2>
-              <p className="mt-3 text-base text-[#77776E]">
+              <p className="mt-3 text-base text-[#77776E] leading-relaxed">
                 Streamlined workflow designed for speed, fairness, and precision.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Step 1 */}
-              <div className="relative rounded-2xl border border-[#E2DDD5] bg-white p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D97745] text-white text-xs font-bold">
+              <div className="relative rounded-2xl border border-[#E2DDD5] bg-white p-8 text-left transition-all hover:shadow-sm">
+                <div className="flex items-center justify-between mb-5">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D97745] text-white text-xs font-bold shadow-2xs">
                     1
                   </span>
                   <Layers className="h-5 w-5 text-[#77776E]" />
@@ -377,15 +454,14 @@ export default function LandingPage() {
                   Integrate &amp; Connect
                 </h3>
                 <p className="mt-2 text-sm text-[#77776E] leading-relaxed">
-                  Post vacancies with custom required skills and weights. Receive candidate applications and resumes
-                  directly into your central talent portal.
+                  Seamlessly connect your ATS and HRIS. Import your job descriptions and existing candidate data.
                 </p>
               </div>
 
               {/* Step 2 */}
-              <div className="relative rounded-2xl border border-[#E2DDD5] bg-white p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D97745] text-white text-xs font-bold">
+              <div className="relative rounded-2xl border border-[#E2DDD5] bg-white p-8 text-left transition-all hover:shadow-sm">
+                <div className="flex items-center justify-between mb-5">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D97745] text-white text-xs font-bold shadow-2xs">
                     2
                   </span>
                   <Cpu className="h-5 w-5 text-[#77776E]" />
@@ -394,15 +470,14 @@ export default function LandingPage() {
                   AI Analysis &amp; Matching
                 </h3>
                 <p className="mt-2 text-sm text-[#77776E] leading-relaxed">
-                  TalentPilot extracts candidate credentials and evaluates their evidence against the job rubric,
-                  surfacing matched strengths and evidence gaps.
+                  TalentPilot analyzes requirements, parses resumes, and uses explainable AI to surface the best candidates with evidence.
                 </p>
               </div>
 
               {/* Step 3 */}
-              <div className="relative rounded-2xl border border-[#E2DDD5] bg-white p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D97745] text-white text-xs font-bold">
+              <div className="relative rounded-2xl border border-[#E2DDD5] bg-white p-8 text-left transition-all hover:shadow-sm">
+                <div className="flex items-center justify-between mb-5">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D97745] text-white text-xs font-bold shadow-2xs">
                     3
                   </span>
                   <Users className="h-5 w-5 text-[#77776E]" />
@@ -411,45 +486,43 @@ export default function LandingPage() {
                   Interview &amp; Hire
                 </h3>
                 <p className="mt-2 text-sm text-[#77776E] leading-relaxed">
-                  Generate tailored interview questions targeting specific skill gaps, coordinate interview
-                  schedules, and make informed hiring decisions.
+                  Conduct interviews with AI assistance, compare top candidates objectively, and make informed hiring decisions faster.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* HUMAN-LED CALLOUT */}
-        <section id="benefits" className="py-16 sm:py-20 border-t border-[#E2DDD5] bg-[#E8E3DA]/60">
+        {/* HUMAN-LED CALLOUT strictly matching wireframe */}
+        <section id="benefits" className="py-16 sm:py-20 border-t border-[#E2DDD5] bg-[#E8E3DA]/50">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div className="rounded-2xl border border-[#DDD8CE] bg-white p-8 sm:p-12 shadow-xs">
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-[#F9ECE5] text-[#D97745] border border-[#ECC9B6]">
-                  <ShieldCheck className="h-10 w-10" />
+            <div className="rounded-2xl border border-[#DDD8CE] bg-white p-8 sm:p-12 shadow-sm text-left">
+              <div className="flex flex-col md:flex-row items-center gap-8 lg:gap-12">
+                {/* Custom Human + Robot SVG Illustration per wireframe */}
+                <div className="shrink-0 flex items-center justify-center">
+                  <HumanRobotIllustration className="w-52 h-40 sm:w-60 sm:h-44" />
                 </div>
-                <div className="space-y-3">
-                  <h3 className="text-2xl font-bold text-[#242522]">
+
+                <div className="space-y-3.5 flex-1 text-left">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-[#242522]">
                     Human-Led, AI-Empowered Hiring
                   </h3>
-                  <p className="text-sm text-[#77776E]">
-                    The platform never makes unilateral hiring decisions. AI assists with evidence extraction and candidate comparison; the recruiter retains complete authority.
-                  </p>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 text-xs font-medium text-[#242522]">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-[#3D784A]" />
-                      <span>Reduce unconscious bias with transparent criteria</span>
+                  <ul className="space-y-2.5 pt-1 text-sm font-medium text-[#242522]">
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#3D784A] shrink-0" />
+                      <span>Reduce unconscious bias with transparent matching.</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-[#3D784A]" />
-                      <span>Save hours on manual resume screening</span>
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#3D784A] shrink-0" />
+                      <span>Save hours on resume screening and data entry.</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-[#3D784A]" />
-                      <span>Objective candidate-to-candidate comparison</span>
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#3D784A] shrink-0" />
+                      <span>Improve candidate experience with faster responses.</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-[#3D784A]" />
-                      <span>Evidence gaps clearly marked as unverified</span>
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 className="h-4 w-4 text-[#3D784A] shrink-0" />
+                      <span>Make data-driven decisions, keeping control in human hands.</span>
                     </li>
                   </ul>
                 </div>
@@ -458,34 +531,47 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA BANNER */}
+        {/* CTA BANNER strictly matching wireframe */}
         <section className="bg-[#D97745] text-white py-16 sm:py-20">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
-            <h2 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Start Building Your Winning Team Today
-            </h2>
-            <p className="text-sm sm:text-base text-white/90 max-w-xl mx-auto">
-              Experience the future of talent evaluation with preloaded demo data and genuine AI workflows.
-            </p>
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/auth/register"
-                className="w-full sm:w-auto rounded-md bg-white px-6 py-3 text-sm font-bold text-[#D97745] shadow-sm hover:bg-[#FAF8F5] transition-colors"
-              >
-                Create Account
-              </Link>
-              <Link
-                href="/auth/login"
-                className="w-full sm:w-auto rounded-md border border-white/40 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-              >
-                Sign In to Demo Recruiter
-              </Link>
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 text-left">
+              <div className="space-y-3 max-w-2xl">
+                <h2 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight">
+                  Start Building Your Winning Team Today.
+                </h2>
+                <p className="text-base text-white/90 leading-relaxed">
+                  Experience the future of recruitment with TalentPilot. Request your personalised demo.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
+                <Link
+                  href="/auth/register"
+                  className="rounded-md bg-white px-7 py-3 text-sm font-bold text-[#D97745] shadow-sm hover:bg-[#FAF8F5] transition-colors text-center"
+                >
+                  Get Started
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setIsDemoModalOpen(true)}
+                  className="rounded-md border border-white/60 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors text-center cursor-pointer"
+                >
+                  Watch Demo
+                </button>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
       <Footer />
+
+      {/* Accessible Interactive Live Demo Dialog Modal */}
+      <LiveDemoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+        onScrollToDemo={scrollToDemo}
+      />
     </div>
   );
 }

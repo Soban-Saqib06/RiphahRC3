@@ -176,22 +176,23 @@ export default function ProfilePage() {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        setUploadError(json.error?.message || "Failed to upload resume.");
+        // AI parsing or upload failed: automatically open manual entry modal without showing error
+        await loadProfileAndResumes();
+        openManualEditor();
       } else {
         setLatestResume(json.data.resume);
+        await loadProfileAndResumes();
         if (json.data.resume.parseStatus === "FAILED") {
-          setUploadError(
-            json.data.resume.parseError ||
-              "Resume text could not be parsed automatically. You can edit details manually."
-          );
+          // Do not show error: open manual entry modal immediately
+          openManualEditor(json.data.resume);
         } else {
           setUploadSuccess("Resume successfully parsed and structured by AI!");
           setTimeout(() => setUploadSuccess(null), 4000);
         }
-        await loadProfileAndResumes();
       }
     } catch {
-      setUploadError("An error occurred during resume upload.");
+      // Do not show error: open manual entry modal immediately
+      openManualEditor();
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -209,8 +210,13 @@ export default function ProfilePage() {
       });
 
       const json = await res.json();
-      if (!res.ok || !json.success) {
-        setUploadError(json.error?.message || "Failed to re-parse resume.");
+      if (!res.ok || !json.success || json.data?.resume?.parseStatus === "FAILED") {
+        // AI parse failed: open manual entry modal automatically without showing error
+        if (json.data?.resume) {
+          setLatestResume(json.data.resume);
+        }
+        await loadProfileAndResumes();
+        openManualEditor(json.data?.resume);
       } else {
         setLatestResume(json.data.resume);
         setUploadSuccess("Resume re-parsed successfully!");
@@ -218,16 +224,17 @@ export default function ProfilePage() {
         await loadProfileAndResumes();
       }
     } catch {
-      setUploadError("Network error during re-parse.");
+      openManualEditor();
     } finally {
       setReparsing(false);
     }
   };
 
-  const openManualEditor = () => {
-    const initialParsed: ParsedResume = latestResume?.parsedData || {
-      fullName: profile?.name || null,
-      email: profile?.email || null,
+  const openManualEditor = (resumeOverride?: ResumeDTO) => {
+    const resume = resumeOverride || latestResume;
+    const initialParsed: ParsedResume = resume?.parsedData || {
+      fullName: profile?.name || currentUser?.name || null,
+      email: profile?.email || currentUser?.email || null,
       phone: profile?.phone || null,
       location: profile?.location || null,
       summary: profile?.summary || null,
@@ -665,7 +672,7 @@ export default function ProfilePage() {
                       </button>
                       <button
                         type="button"
-                        onClick={openManualEditor}
+                        onClick={() => openManualEditor()}
                         className="inline-flex items-center gap-1 rounded-md bg-[#D97745] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#C46332] cursor-pointer"
                       >
                         <Edit3 className="h-3 w-3" />
@@ -674,27 +681,16 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {latestResume.parseStatus === "FAILED" && latestResume.parseError && (
-                    <div className="mt-3 rounded-lg border border-[#EFC6C3] bg-[#F8ECEB] p-3 text-xs text-[#BA3D35]">
-                      <p className="font-semibold">Parsing Failed</p>
-                      <p className="mt-0.5">{latestResume.parseError}</p>
-                      <div className="mt-2 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleReparse(latestResume.id)}
-                          className="font-bold underline cursor-pointer"
-                        >
-                          Try re-parsing
-                        </button>
-                        <span>•</span>
-                        <button
-                          type="button"
-                          onClick={openManualEditor}
-                          className="font-bold underline cursor-pointer"
-                        >
-                          Enter details manually
-                        </button>
-                      </div>
+                  {latestResume.parseStatus === "FAILED" && !parsedData && (
+                    <div className="mt-3 flex items-center justify-between rounded-lg border border-[#E2DDD5] bg-[#FAF8F5] p-3 text-xs text-[#77776E]">
+                      <span>Manual profile details entry ready.</span>
+                      <button
+                        type="button"
+                        onClick={() => openManualEditor()}
+                        className="rounded-md bg-[#D97745] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#C46332] cursor-pointer"
+                      >
+                        Enter details manually
+                      </button>
                     </div>
                   )}
                 </div>
