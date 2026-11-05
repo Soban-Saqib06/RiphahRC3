@@ -1,4 +1,11 @@
-// Recruitment & Talent Intelligence Platform — Prisma/MySQL schema
+// prisma/schema.prisma
+// Recruitment & Talent Intelligence Platform. Owner: Dev B (platform).
+//
+// NOTE FOR WHOEVER SETS UP PRISMA: keep the models and enums below exactly as written.
+// Replace ONLY the `generator` and `datasource` blocks with whatever `npx prisma init`
+// generates for the installed Prisma version (newer versions move the connection URL
+// into prisma.config.ts and may need a MySQL driver adapter). Then run `npx prisma validate`.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +15,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
 enum UserRole {
   RECRUITER
   CANDIDATE
@@ -15,9 +26,8 @@ enum UserRole {
 
 enum JobStatus {
   DRAFT
-  PUBLISHED
+  OPEN
   CLOSED
-  ARCHIVED
 }
 
 enum EmploymentType {
@@ -25,345 +35,336 @@ enum EmploymentType {
   PART_TIME
   CONTRACT
   INTERNSHIP
-  TEMPORARY
 }
 
+enum SkillPriority {
+  REQUIRED
+  PREFERRED
+}
+
+enum ParseStatus {
+  PENDING
+  PARSED
+  FAILED
+}
+
+// Pipeline order: SUBMITTED -> PARSED -> ASSESSED -> IN_REVIEW -> SHORTLISTED -> INTERVIEW -> SELECTED
+// REJECTED can be reached from any non-terminal recruiter-reviewable state. Rules: docs/DATA_MODEL.md section 5.
 enum ApplicationStatus {
   SUBMITTED
   PARSED
-  ASSESSMENT_READY
+  ASSESSED
   IN_REVIEW
   SHORTLISTED
   REJECTED
   INTERVIEW
   SELECTED
-  WITHDRAWN
-}
-
-enum ResumeStatus {
-  UPLOADED
-  PROCESSING
-  PARSED
-  FAILED
 }
 
 enum AssessmentStatus {
   PENDING
-  PROCESSING
   COMPLETED
   FAILED
 }
 
-enum RequirementDimension {
-  SKILL
+enum AssessmentDimension {
+  SKILLS
   EXPERIENCE
-  PROJECT
-  QUALIFICATION
+  PROJECTS
+  QUALIFICATIONS
 }
 
-enum EvidenceStatus {
+// NOT_EVIDENCED means "no supporting evidence found in the resume". It does NOT mean
+// "the candidate lacks this skill". UI copy must say "No evidence found", never "Does not have".
+enum EvidenceVerdict {
   MATCHED
   PARTIAL
-  NO_EVIDENCE
+  NOT_EVIDENCED
 }
 
-enum MatchRecommendation {
-  STRONG_MATCH
-  POSSIBLE_MATCH
-  WEAK_MATCH
-  INSUFFICIENT_EVIDENCE
+enum QuestionCategory {
+  TECHNICAL
+  PROJECT
+  BEHAVIORAL
+  ROLE_FIT
+}
+
+enum QuestionSource {
+  AI
+  RECRUITER
+}
+
+enum InterviewType {
+  PHONE_SCREEN
+  TECHNICAL
+  HR
+  PANEL
 }
 
 enum InterviewStatus {
-  DRAFT
   SCHEDULED
   COMPLETED
   CANCELLED
 }
 
-enum InterviewType {
-  PHONE
-  VIDEO
-  ONSITE
-  TECHNICAL
-  HR
-  OTHER
-}
-
-enum InterviewQuestionSource {
-  AI_GENERATED
-  MANUAL
-}
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
 
 model User {
-  id                String   @id @default(cuid()) @db.VarChar(191)
-  name              String   @db.VarChar(160)
-  email             String   @unique @db.VarChar(254)
-  passwordHash      String   @db.VarChar(255)
-  role              UserRole
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  candidateProfile  CandidateProfile?
-  recruiterProfile  RecruiterProfile?
-  jobs              Job[]                     @relation("RecruiterJobs")
-  statusChanges     ApplicationStatusHistory[] @relation("StatusChangedBy")
-  createdInterviews Interview[]                @relation("InterviewCreatedBy")
-
-  @@index([role, isActive])
-}
-
-model CandidateProfile {
-  id           String   @id @default(cuid()) @db.VarChar(191)
-  userId       String   @unique @db.VarChar(191)
-  phone        String?  @db.VarChar(40)
-  location     String?  @db.VarChar(160)
-  headline     String?  @db.VarChar(200)
-  summary      String?  @db.Text
-  linkedinUrl  String?  @db.VarChar(500)
-  portfolioUrl String?  @db.VarChar(500)
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  candidateProfile      CandidateProfile?
+  sessions              Session[]
+  postedJobs            Job[]                    @relation("JobRecruiter")
+  statusChanges         ApplicationStatusEvent[] @relation("StatusChangedBy")
+  scheduledInterviews   Interview[]              @relation("InterviewScheduler")
+  overriddenAssessments Assessment[]             @relation("AssessmentOverrider")
+
+  @@index([role])
+}
+
+// Server-side session. The cookie holds a random token; only its SHA-256 hex hash is stored here.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// One per CANDIDATE user. Created automatically at registration.
+model CandidateProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  headline    String?
+  phone       String?
+  location    String?
+  summary     String?  @db.Text
+  linkedinUrl String?
+  githubUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   resumes      Resume[]
   applications Application[]
-
-  @@index([location])
 }
 
-model RecruiterProfile {
-  id           String   @id @default(cuid()) @db.VarChar(191)
-  userId       String   @unique @db.VarChar(191)
-  organization String?  @db.VarChar(180)
-  jobTitle     String?  @db.VarChar(120)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Job {
-  id                     String         @id @default(cuid()) @db.VarChar(191)
-  recruiterId            String         @db.VarChar(191)
-  title                  String         @db.VarChar(180)
-  department             String?        @db.VarChar(120)
-  location               String?        @db.VarChar(160)
-  employmentType         EmploymentType?
-  salaryMin              Decimal?       @db.Decimal(12, 2)
-  salaryMax              Decimal?       @db.Decimal(12, 2)
-  salaryCurrency         String?        @db.VarChar(3)
-  description            String         @db.LongText
-  experienceMinYears     Float?
-  experienceMaxYears     Float?
-  qualificationSummary   String?        @db.Text
-  skillsWeight           Int            @default(50)
-  experienceWeight       Int            @default(25)
-  projectRelevanceWeight Int            @default(15)
-  qualificationWeight    Int            @default(10)
-  status                 JobStatus      @default(DRAFT)
-  publishedAt            DateTime?
-  closedAt               DateTime?
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
-
-  recruiter    User              @relation("RecruiterJobs", fields: [recruiterId], references: [id], onDelete: Restrict)
-  requirements JobRequirement[]
-  applications Application[]
-
-  @@index([recruiterId, status])
-  @@index([status, publishedAt])
-  @@index([title])
-  @@index([createdAt])
-}
-
-model JobRequirement {
-  id          String               @id @default(cuid()) @db.VarChar(191)
-  jobId       String               @db.VarChar(191)
-  dimension   RequirementDimension
-  title       String               @db.VarChar(180)
-  description String?              @db.Text
-  isRequired  Boolean              @default(true)
-  importance  Float                @default(1)
-  sortOrder   Int                  @default(0)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-
-  job     Job                            @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  results AssessmentRequirementResult[]
-
-  @@index([jobId, dimension, sortOrder])
-}
+// ---------------------------------------------------------------------------
+// Resumes
+// ---------------------------------------------------------------------------
 
 model Resume {
-  id               String       @id @default(cuid()) @db.VarChar(191)
-  candidateId      String       @db.VarChar(191)
-  originalFilename String       @db.VarChar(255)
-  storageKey       String       @db.VarChar(500)
-  mimeType         String       @db.VarChar(100)
-  sizeBytes        Int
-  status           ResumeStatus @default(UPLOADED)
-  isCurrent        Boolean      @default(false)
-  uploadedAt       DateTime     @default(now())
+  id               String      @id @default(cuid())
+  candidateId      String
+  originalFileName String
+  storagePath      String // relative path inside storage/resumes/, never exposed to clients
+  mimeType         String      @default("application/pdf")
+  fileSizeBytes    Int
+  extractedText    String?     @db.LongText // raw text from the PDF (capped at 60,000 chars)
+  parseStatus      ParseStatus @default(PENDING)
+  parseError       String?     @db.Text
+  parsedData       Json? // ParsedResume shape, docs/DATA_MODEL.md section 4
   parsedAt         DateTime?
+  uploadedAt       DateTime    @default(now())
 
   candidate    CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  extraction   ResumeExtraction?
   applications Application[]
-  assessments  Assessment[]
 
-  @@index([candidateId, isCurrent])
+  @@index([candidateId])
+}
+
+// ---------------------------------------------------------------------------
+// Jobs
+// ---------------------------------------------------------------------------
+
+model Job {
+  id                     String         @id @default(cuid())
+  recruiterId            String
+  title                  String
+  department             String
+  location               String
+  employmentType         EmploymentType @default(FULL_TIME)
+  salaryMin              Int?
+  salaryMax              Int?
+  salaryCurrency         String         @default("PKR")
+  description            String         @db.Text
+  minYearsExperience     Int            @default(0)
+  requiredQualifications String?        @db.Text
+  status                 JobStatus      @default(DRAFT)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  closedAt               DateTime?
+
+  recruiter    User          @relation("JobRecruiter", fields: [recruiterId], references: [id])
+  skills       JobSkill[]
+  applications Application[]
+
+  @@index([recruiterId])
   @@index([status])
 }
 
-model ResumeExtraction {
-  id                  String   @id @default(cuid()) @db.VarChar(191)
-  resumeId            String   @unique @db.VarChar(191)
-  extractedName       String?  @db.VarChar(160)
-  extractedEmail      String?  @db.VarChar(254)
-  extractedPhone      String?  @db.VarChar(40)
-  professionalSummary String?  @db.Text
-  skills              Json?
-  education           Json?
-  experience          Json?
-  projects            Json?
-  rawText             String   @db.LongText
-  extractionModel     String?  @db.VarChar(120)
-  extractionVersion   String?  @db.VarChar(80)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+// A skill requirement of a job, with its importance. importance is an integer 1 (minor) to 5 (critical).
+model JobSkill {
+  id         String        @id @default(cuid())
+  jobId      String
+  name       String
+  priority   SkillPriority @default(REQUIRED)
+  importance Int           @default(3)
 
-  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  job             Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  assessmentItems AssessmentItem[]
+
+  @@unique([jobId, name])
+  @@index([jobId])
 }
+
+// ---------------------------------------------------------------------------
+// Applications
+// ---------------------------------------------------------------------------
 
 model Application {
-  id          String            @id @default(cuid()) @db.VarChar(191)
-  jobId       String            @db.VarChar(191)
-  candidateId String            @db.VarChar(191)
-  resumeId    String?           @db.VarChar(191)
-  status      ApplicationStatus @default(SUBMITTED)
-  coverLetter String?           @db.Text
-  appliedAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  withdrawnAt DateTime?
+  id              String            @id @default(cuid())
+  jobId           String
+  candidateId     String
+  resumeId        String // the exact resume submitted with this application
+  status          ApplicationStatus @default(SUBMITTED)
+  coverNote       String?           @db.Text
+  recruiterNotes  String?           @db.Text // never visible to candidates
+  submittedAt     DateTime          @default(now())
+  statusUpdatedAt DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
-  job          Job                         @relation(fields: [jobId], references: [id], onDelete: Restrict)
-  candidate    CandidateProfile           @relation(fields: [candidateId], references: [id], onDelete: Restrict)
-  resume       Resume?                    @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  assessments  Assessment[]
-  statusHistory ApplicationStatusHistory[]
-  interviews   Interview[]
+  job                Job                      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate          CandidateProfile         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  resume             Resume                   @relation(fields: [resumeId], references: [id])
+  assessment         Assessment?
+  statusEvents       ApplicationStatusEvent[]
+  interviewQuestions InterviewQuestion[]
+  interviews         Interview[]
 
   @@unique([jobId, candidateId])
-  @@index([jobId, status, appliedAt])
-  @@index([candidateId, appliedAt])
-  @@index([status, updatedAt])
-}
-
-model ApplicationStatusHistory {
-  id            String            @id @default(cuid()) @db.VarChar(191)
-  applicationId String            @db.VarChar(191)
-  fromStatus    ApplicationStatus?
-  toStatus      ApplicationStatus
-  note          String?           @db.VarChar(500)
-  changedById   String?           @db.VarChar(191)
-  createdAt     DateTime          @default(now())
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  changedBy   User?       @relation("StatusChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
-
-  @@index([applicationId, createdAt])
-  @@index([changedById])
-}
-
-model Assessment {
-  id                    String                @id @default(cuid()) @db.VarChar(191)
-  applicationId         String                @db.VarChar(191)
-  resumeId              String                @db.VarChar(191)
-  status                AssessmentStatus      @default(PENDING)
-  skillsScore           Float?
-  experienceScore       Float?
-  projectRelevanceScore Float?
-  qualificationScore    Float?
-  overallScore          Float?
-  recommendation        MatchRecommendation?
-  summary               String?               @db.Text
-  explanation           String?               @db.LongText
-  model                 String?               @db.VarChar(120)
-  promptVersion         String?               @db.VarChar(80)
-  errorMessage          String?               @db.Text
-  rawResponse           Json?
-  startedAt             DateTime?
-  completedAt           DateTime?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-
-  application        Application                  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  resume             Resume                       @relation(fields: [resumeId], references: [id], onDelete: Restrict)
-  requirementResults AssessmentRequirementResult[]
-
-  @@index([applicationId, createdAt])
-  @@index([status, createdAt])
+  @@index([jobId, status])
+  @@index([candidateId])
   @@index([resumeId])
 }
 
-model AssessmentRequirementResult {
-  id              String        @id @default(cuid()) @db.VarChar(191)
-  assessmentId    String        @db.VarChar(191)
-  requirementId   String        @db.VarChar(191)
-  evidenceStatus  EvidenceStatus
-  score           Float?
-  evidenceExcerpt String?       @db.Text
-  evidenceSection String?       @db.VarChar(100)
-  evidenceStart   Int?
-  evidenceEnd     Int?
-  explanation     String?       @db.Text
-  createdAt       DateTime      @default(now())
+// Append-only history of status changes. Drives the candidate timeline and the dashboard's recent activity.
+model ApplicationStatusEvent {
+  id            String             @id @default(cuid())
+  applicationId String
+  fromStatus    ApplicationStatus?
+  toStatus      ApplicationStatus
+  changedById   String? // null = system
+  note          String?            @db.Text
+  createdAt     DateTime           @default(now())
 
-  assessment  Assessment     @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  requirement JobRequirement @relation(fields: [requirementId], references: [id], onDelete: Restrict)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedBy   User?       @relation("StatusChangedBy", fields: [changedById], references: [id])
 
-  @@unique([assessmentId, requirementId])
-  @@index([requirementId, evidenceStatus])
+  @@index([applicationId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// AI assessment (one current assessment per application; a re-run replaces it)
+// ---------------------------------------------------------------------------
+
+model Assessment {
+  id                  String           @id @default(cuid())
+  applicationId       String           @unique
+  status              AssessmentStatus @default(PENDING)
+  overallScore        Int? // 0-100, computed server-side from the weighted dimension scores
+  skillsScore         Int? // 0-100, computed server-side from item verdicts
+  experienceScore     Int? // 0-100, from the model, clamped
+  projectsScore       Int? // 0-100, from the model, clamped
+  qualificationsScore Int? // 0-100, from the model, clamped
+  weights             Json // {"skills":50,"experience":25,"projects":15,"qualifications":10} snapshot used for this run
+  summary             String?          @db.Text // <= 80 words, neutral, no hiring recommendation
+  modelId             String?
+  errorMessage        String?          @db.Text
+  generatedAt         DateTime?
+  overrideScore       Int? // recruiter override, 0-100
+  overrideNote        String?          @db.Text
+  overriddenAt        DateTime?
+  overriddenById      String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  application  Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  overriddenBy User?            @relation("AssessmentOverrider", fields: [overriddenById], references: [id])
+  items        AssessmentItem[]
+}
+
+// One row per assessed requirement: the evidence trail behind the score.
+model AssessmentItem {
+  id              String              @id @default(cuid())
+  assessmentId    String
+  dimension       AssessmentDimension
+  requirement     String // e.g. "PostgreSQL", "3+ years backend experience", "Project: Inventory API"
+  jobSkillId      String? // set only for SKILLS items
+  verdict         EvidenceVerdict
+  evidenceExcerpt String?             @db.Text // verbatim text from the resume; null when none was found/verified
+  reasoning       String              @db.Text
+  sortOrder       Int                 @default(0)
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  jobSkill   JobSkill?  @relation(fields: [jobSkillId], references: [id], onDelete: SetNull)
+
+  @@index([assessmentId])
+  @@index([jobSkillId])
+}
+
+// ---------------------------------------------------------------------------
+// Interviews
+// ---------------------------------------------------------------------------
+
+model InterviewQuestion {
+  id            String           @id @default(cuid())
+  applicationId String
+  category      QuestionCategory
+  question      String           @db.Text
+  rationale     String?          @db.Text
+  source        QuestionSource   @default(AI)
+  sortOrder     Int              @default(0)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
 }
 
 model Interview {
-  id                    String          @id @default(cuid()) @db.VarChar(191)
-  applicationId         String          @db.VarChar(191)
-  createdById           String          @db.VarChar(191)
-  status                InterviewStatus @default(DRAFT)
-  type                  InterviewType   @default(OTHER)
-  scheduledAt           DateTime?
-  durationMinutes       Int?
-  interviewerName       String?         @db.VarChar(160)
-  interviewerEmail      String?         @db.VarChar(254)
-  locationOrMeetingLink String?         @db.VarChar(500)
-  notes                 String?         @db.Text
-  feedback              String?         @db.Text
-  decision              String?         @db.VarChar(80)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  id              String          @id @default(cuid())
+  applicationId   String
+  scheduledAt     DateTime
+  durationMinutes Int             @default(45)
+  type            InterviewType
+  interviewerName String
+  location        String? // room or meeting link
+  status          InterviewStatus @default(SCHEDULED)
+  feedbackNotes   String?         @db.Text
+  scheduledById   String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  application Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  createdBy   User                @relation("InterviewCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  questions   InterviewQuestion[]
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledBy User        @relation("InterviewScheduler", fields: [scheduledById], references: [id])
 
-  @@index([applicationId, scheduledAt])
-  @@index([status, scheduledAt])
-}
-
-model InterviewQuestion {
-  id          String                  @id @default(cuid()) @db.VarChar(191)
-  interviewId String                  @db.VarChar(191)
-  question    String                  @db.Text
-  category    String?                 @db.VarChar(100)
-  source      InterviewQuestionSource @default(AI_GENERATED)
-  sortOrder   Int                     @default(0)
-  createdAt   DateTime                @default(now())
-  updatedAt   DateTime                @updatedAt
-
-  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-
-  @@index([interviewId, sortOrder])
+  @@index([applicationId])
+  @@index([scheduledAt])
+  @@index([status])
 }

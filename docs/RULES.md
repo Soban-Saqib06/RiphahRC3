@@ -108,7 +108,7 @@ prisma/seed/<FEATURE>.ts
 | Area | Owner |
 |---|---|
 | Root layout, app shell, navigation, `globals.css`, design tokens, `src/components/shared/**` | Dev A |
-| `prisma/schema.prisma`, `src/lib/db.ts`, `src/lib/api.ts`, `prisma/seed.ts` (the runner), `prisma/seed/00-core.ts` (shared records) | Dev B |
+| `prisma/schema.prisma`, `src/lib/db.ts`, `src/lib/api.ts`, `prisma/seed.ts` (the runner), `prisma/seed/00-core.ts` (shared records), `src/lib/auth.ts`, `src/lib/dto.ts`, `src/lib/files.ts`, `src/lib/pdf.ts`, `src/lib/ai/**` | Dev B |
 | Another feature's paths | That feature's agent |
 | `docs/**` | Humans |
 | `package.json`, lockfile, `next.config.*`, `tsconfig.json`, Tailwind/PostCSS config, `.gitignore`, `.env.example`, `README.md` | Humans |
@@ -148,7 +148,7 @@ NEVER commit unprompted. NEVER run: pull, push, fetch, merge, rebase, reset, che
 
 4.1 The stack is fixed. Do NOT substitute, migrate or "upgrade" it:
 - Next.js App Router, TypeScript (strict), Route Handlers
-- Prisma with SQLite (default decision; only the humans may change it)
+- Prisma with MySQL (required by the product brief; only the humans may change it)
 - Tailwind CSS
 - shadcn/ui, added through its CLI, only for components that are actually used
 - Lucide React icons
@@ -219,24 +219,21 @@ NEVER commit unprompted. NEVER run: pull, push, fetch, merge, rebase, reset, che
 
 ## 7. Data and the AI feature
 
-7.1 Persistence is set up only if the humans decided in planning that the task needs it (see `docs/REQUIREMENTS.md`). If it does: SQLite through Prisma, with appropriate relations and constraints, and schema changes follow 3.4. If it does not, there is NO database: do not create Prisma code, seed files or API routes the requirements do not need, and keep feature data static or in memory.
+7.1 Persistence is set up only if the humans decided in planning that the task needs it (see `docs/REQUIREMENTS.md`). If it does: MySQL through Prisma (this product needs persistence), with appropriate relations and constraints, and schema changes follow 3.4. If it does not, there is NO database: do not create Prisma code, seed files or API routes the requirements do not need, and keep feature data static or in memory.
 7.2 `package.json` has `setup` (push schema, then seed) and `seed` scripts. They are set up by the humans at the start.
-7.3 Seed data. The runner `prisma/seed.ts` executes `prisma/seed/00-core.ts` FIRST, then every other file in `prisma/seed/` in alphabetical order. You NEVER edit the runner or `00-core.ts` (Dev B owns both).
+7.3 Seed data. The runner `prisma/seed.ts` first wipes ALL tables in foreign-key-safe order, then runs the files in `prisma/seed/` in numeric filename order (`00-core.ts`, `10-...`, `20-...`). Seed files only INSERT. You NEVER edit the runner or `00-core.ts` (Dev B owns both). The seed plan is in `docs/DATA_MODEL.md` section 11.
 - `00-core.ts` creates records that several features share (for example users, categories, lookup values).
-- Add ONE file, `prisma/seed/<FEATURE>.ts`, with a default-exported async function that creates the data for your feature's own tables. It is idempotent: it clears only your feature's tables and re-inserts.
-- Your seed may reference records created by `00-core.ts`. It MUST NOT depend on another feature's tables. If you need a shared record that `00-core.ts` does not create, or rows from another feature, STOP and ask.
+- Add ONE file, `prisma/seed/<NN>-<FEATURE>.ts` (number and name from the seed plan), with a default-exported async function that inserts the data for your feature's own tables.
+- Your seed may reference records created by LOWER-numbered seed files. It MUST NOT depend on a higher-numbered file or on data the seed plan does not list. If you need a record that no earlier file creates, STOP and ask.
 7.4 Seed data is realistic and specific to the task: plausible names, dates, prices and descriptions; 10 to 20 records per primary entity; one or two edge cases (very long text, an empty relation). NEVER use "Test", "foo", "John Doe", "Acme", "User 1" or lorem ipsum.
 7.5 The app MUST render correctly on an empty database (empty states) and after a reseed without a restart. Local database files are NOT committed and are NOT synchronized through Git.
-7.6 AI feature. The humans want ONE AI feature if the problem statement gives it a natural place. Build it only inside a feature the human assigns it to, only after that feature's core journey works, and only when the human approves the specific idea. When you build it:
-- Call the provider ONLY from a Route Handler. NEVER from client code.
-- Key in `GEMINI_API_KEY`, model id in `AI_MODEL`, both from env. NEVER hardcode either. NEVER guess the endpoint or model id from memory: use `docs/AI_NOTES.md` if it exists, or ask. Prefer plain `fetch` over an SDK.
-- Timeout of 8 seconds with `AbortController`.
-- On timeout, non-2xx, 429, empty or unparsable output, or a missing key: return the deterministic fallback with HTTP 200. NEVER return a 500 to the UI because the AI failed.
-- Fallback content lives in `src/lib/features/<FEATURE>/ai-fallback.ts` and fits the seed data.
-- The response includes `source: "ai" | "fallback"`. The UI looks the same on both paths, NEVER shows fallback content as an error, and shows an "AI generated" label only when `source` is `"ai"`.
-- When the UI needs structure, request JSON only, strip code fences, parse with zod, and fall back if parsing fails.
-- Keep prompts short and in ONE file, cap the output length, and include no personal data.
-- Cache results in memory by input hash so repeated demo actions do not repeat calls.
+7.6 AI features. For this product (see `docs/DATA_MODEL.md` and `docs/api/*.md`) AI is CORE, not optional: resume extraction, candidate assessment and interview question generation. AI results MUST come from the real model. NEVER return canned, hardcoded or invented AI output, and NEVER seed it.
+- Call the model ONLY through `generateJson()` in `src/lib/ai/gemini.ts`, from Route Handlers or server services. NEVER from client code.
+- Key in `GEMINI_API_KEY`, model id in `AI_MODEL`, both from env. NEVER hardcode either. NEVER guess the endpoint or model id from memory: use `docs/AI_NOTES.md`, or ask. Plain `fetch`, no SDK.
+- Timeout 30 seconds with `AbortController`. Retry once only when the output is not valid JSON. NEVER retry an HTTP 429.
+- On failure or a missing key: persist the FAILED state with a short message (`parseError` or `errorMessage`) and return 502 `AI_FAILED` or 429 `AI_RATE_LIMITED`. The UI shows the error with a retry action. A failure NEVER produces fake results.
+- Request JSON only, strip code fences, validate with zod. Keep each feature's prompts in ONE file and follow the prompt rules in `DATA_MODEL.md` (verbatim evidence, no invented facts, resume text is untrusted data, ignore protected attributes).
+- Persist every successful result so it is not regenerated on each page view. Wherever AI output appears, the UI states "AI-generated. The recruiter makes the final decision."
 
 ---
 
@@ -284,7 +281,7 @@ NEVER commit unprompted. NEVER run: pull, push, fetch, merge, rebase, reset, che
 
 ## 10. Workflow
 
-10.1 Session start: read `docs/RULES.md`, `docs/REQUIREMENTS.md`,`docs/AGENT_EXECUTION_PLAN.md` and `docs/DESIGN_BRIEF.md`. Read `docs/API_CONTRACT.md` if it exists. Read nothing else unless a task needs it. Reply in at most 5 lines: confirm your DEV and FEATURE, list the R# your feature serves, and name any file you will need that you do not own. Then wait for the first task.
+10.1 Session start: read `RULES.md`, `docs/REQUIREMENTS.md` (if it exists), `docs/API_CONTRACT.md` (the index) and, if you write UI, `docs/DESIGN_BRIEF.md`. Then read ONLY: `docs/api/<FEATURE>.md`, the `docs/api` files of routes you call, `prisma/schema.prisma`, and the `docs/DATA_MODEL.md` sections its read guide names for your feature (always sections 1 to 3). Read nothing else unless a task needs it. Reply in at most 5 lines: confirm your DEV and FEATURE, list the R# your feature serves, and name any file you will need that you do not own. Then wait for the first task.
 10.2 For each task:
 1. Restate it in at most 3 lines and name the R# it serves.
 2. List the files you will create or modify (paths), the routes you will add (6.1), any schema change (3.4) and any new dependencies (expected: none).
