@@ -1,1 +1,32 @@
+# Dependencies
 node_modules
+/.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+
+# Environment files (DATA_MODEL.md section 12)
+.env*
+!.env.example
+
+# Local storage (resumes, uploads)
+storage/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS files
+.DS_Store
+*.pem
+
+# IDE / Editor
+.vscode/
+.idea/

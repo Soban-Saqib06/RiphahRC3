@@ -1,0 +1,370 @@
+// prisma/schema.prisma
+// Recruitment & Talent Intelligence Platform. Owner: Dev B (platform).
+//
+// NOTE FOR WHOEVER SETS UP PRISMA: keep the models and enums below exactly as written.
+// Replace ONLY the `generator` and `datasource` blocks with whatever `npx prisma init`
+// generates for the installed Prisma version (newer versions move the connection URL
+// into prisma.config.ts and may need a MySQL driver adapter). Then run `npx prisma validate`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  RECRUITER
+  CANDIDATE
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum SkillPriority {
+  REQUIRED
+  PREFERRED
+}
+
+enum ParseStatus {
+  PENDING
+  PARSED
+  FAILED
+}
+
+// Pipeline order: SUBMITTED -> PARSED -> ASSESSED -> IN_REVIEW -> SHORTLISTED -> INTERVIEW -> SELECTED
+// REJECTED can be reached from any non-terminal recruiter-reviewable state. Rules: docs/DATA_MODEL.md section 5.
+enum ApplicationStatus {
+  SUBMITTED
+  PARSED
+  ASSESSED
+  IN_REVIEW
+  SHORTLISTED
+  REJECTED
+  INTERVIEW
+  SELECTED
+}
+
+enum AssessmentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum AssessmentDimension {
+  SKILLS
+  EXPERIENCE
+  PROJECTS
+  QUALIFICATIONS
+}
+
+// NOT_EVIDENCED means "no supporting evidence found in the resume". It does NOT mean
+// "the candidate lacks this skill". UI copy must say "No evidence found", never "Does not have".
+enum EvidenceVerdict {
+  MATCHED
+  PARTIAL
+  NOT_EVIDENCED
+}
+
+enum QuestionCategory {
+  TECHNICAL
+  PROJECT
+  BEHAVIORAL
+  ROLE_FIT
+}
+
+enum QuestionSource {
+  AI
+  RECRUITER
+}
+
+enum InterviewType {
+  PHONE_SCREEN
+  TECHNICAL
+  HR
+  PANEL
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  candidateProfile      CandidateProfile?
+  sessions              Session[]
+  postedJobs            Job[]                    @relation("JobRecruiter")
+  statusChanges         ApplicationStatusEvent[] @relation("StatusChangedBy")
+  scheduledInterviews   Interview[]              @relation("InterviewScheduler")
+  overriddenAssessments Assessment[]             @relation("AssessmentOverrider")
+
+  @@index([role])
+}
+
+// Server-side session. The cookie holds a random token; only its SHA-256 hex hash is stored here.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// One per CANDIDATE user. Created automatically at registration.
+model CandidateProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  headline    String?
+  phone       String?
+  location    String?
+  summary     String?  @db.Text
+  linkedinUrl String?
+  githubUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumes      Resume[]
+  applications Application[]
+}
+
+// ---------------------------------------------------------------------------
+// Resumes
+// ---------------------------------------------------------------------------
+
+model Resume {
+  id               String      @id @default(cuid())
+  candidateId      String
+  originalFileName String
+  storagePath      String // relative path inside storage/resumes/, never exposed to clients
+  mimeType         String      @default("application/pdf")
+  fileSizeBytes    Int
+  extractedText    String?     @db.LongText // raw text from the PDF (capped at 60,000 chars)
+  parseStatus      ParseStatus @default(PENDING)
+  parseError       String?     @db.Text
+  parsedData       Json? // ParsedResume shape, docs/DATA_MODEL.md section 4
+  parsedAt         DateTime?
+  uploadedAt       DateTime    @default(now())
+
+  candidate    CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@index([candidateId])
+}
+
+// ---------------------------------------------------------------------------
+// Jobs
+// ---------------------------------------------------------------------------
+
+model Job {
+  id                     String         @id @default(cuid())
+  recruiterId            String
+  title                  String
+  department             String
+  location               String
+  employmentType         EmploymentType @default(FULL_TIME)
+  salaryMin              Int?
+  salaryMax              Int?
+  salaryCurrency         String         @default("PKR")
+  description            String         @db.Text
+  minYearsExperience     Int            @default(0)
+  requiredQualifications String?        @db.Text
+  status                 JobStatus      @default(DRAFT)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  closedAt               DateTime?
+
+  recruiter    User          @relation("JobRecruiter", fields: [recruiterId], references: [id])
+  skills       JobSkill[]
+  applications Application[]
+
+  @@index([recruiterId])
+  @@index([status])
+}
+
+// A skill requirement of a job, with its importance. importance is an integer 1 (minor) to 5 (critical).
+model JobSkill {
+  id         String        @id @default(cuid())
+  jobId      String
+  name       String
+  priority   SkillPriority @default(REQUIRED)
+  importance Int           @default(3)
+
+  job             Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  assessmentItems AssessmentItem[]
+
+  @@unique([jobId, name])
+  @@index([jobId])
+}
+
+// ---------------------------------------------------------------------------
+// Applications
+// ---------------------------------------------------------------------------
+
+model Application {
+  id              String            @id @default(cuid())
+  jobId           String
+  candidateId     String
+  resumeId        String // the exact resume submitted with this application
+  status          ApplicationStatus @default(SUBMITTED)
+  coverNote       String?           @db.Text
+  recruiterNotes  String?           @db.Text // never visible to candidates
+  submittedAt     DateTime          @default(now())
+  statusUpdatedAt DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  job                Job                      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate          CandidateProfile         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  resume             Resume                   @relation(fields: [resumeId], references: [id])
+  assessment         Assessment?
+  statusEvents       ApplicationStatusEvent[]
+  interviewQuestions InterviewQuestion[]
+  interviews         Interview[]
+
+  @@unique([jobId, candidateId])
+  @@index([jobId, status])
+  @@index([candidateId])
+  @@index([resumeId])
+}
+
+// Append-only history of status changes. Drives the candidate timeline and the dashboard's recent activity.
+model ApplicationStatusEvent {
+  id            String             @id @default(cuid())
+  applicationId String
+  fromStatus    ApplicationStatus?
+  toStatus      ApplicationStatus
+  changedById   String? // null = system
+  note          String?            @db.Text
+  createdAt     DateTime           @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedBy   User?       @relation("StatusChangedBy", fields: [changedById], references: [id])
+
+  @@index([applicationId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// AI assessment (one current assessment per application; a re-run replaces it)
+// ---------------------------------------------------------------------------
+
+model Assessment {
+  id                  String           @id @default(cuid())
+  applicationId       String           @unique
+  status              AssessmentStatus @default(PENDING)
+  overallScore        Int? // 0-100, computed server-side from the weighted dimension scores
+  skillsScore         Int? // 0-100, computed server-side from item verdicts
+  experienceScore     Int? // 0-100, from the model, clamped
+  projectsScore       Int? // 0-100, from the model, clamped
+  qualificationsScore Int? // 0-100, from the model, clamped
+  weights             Json // {"skills":50,"experience":25,"projects":15,"qualifications":10} snapshot used for this run
+  summary             String?          @db.Text // <= 80 words, neutral, no hiring recommendation
+  modelId             String?
+  errorMessage        String?          @db.Text
+  generatedAt         DateTime?
+  overrideScore       Int? // recruiter override, 0-100
+  overrideNote        String?          @db.Text
+  overriddenAt        DateTime?
+  overriddenById      String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  application  Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  overriddenBy User?            @relation("AssessmentOverrider", fields: [overriddenById], references: [id])
+  items        AssessmentItem[]
+}
+
+// One row per assessed requirement: the evidence trail behind the score.
+model AssessmentItem {
+  id              String              @id @default(cuid())
+  assessmentId    String
+  dimension       AssessmentDimension
+  requirement     String // e.g. "PostgreSQL", "3+ years backend experience", "Project: Inventory API"
+  jobSkillId      String? // set only for SKILLS items
+  verdict         EvidenceVerdict
+  evidenceExcerpt String?             @db.Text // verbatim text from the resume; null when none was found/verified
+  reasoning       String              @db.Text
+  sortOrder       Int                 @default(0)
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  jobSkill   JobSkill?  @relation(fields: [jobSkillId], references: [id], onDelete: SetNull)
+
+  @@index([assessmentId])
+  @@index([jobSkillId])
+}
+
+// ---------------------------------------------------------------------------
+// Interviews
+// ---------------------------------------------------------------------------
+
+model InterviewQuestion {
+  id            String           @id @default(cuid())
+  applicationId String
+  category      QuestionCategory
+  question      String           @db.Text
+  rationale     String?          @db.Text
+  source        QuestionSource   @default(AI)
+  sortOrder     Int              @default(0)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+model Interview {
+  id              String          @id @default(cuid())
+  applicationId   String
+  scheduledAt     DateTime
+  durationMinutes Int             @default(45)
+  type            InterviewType
+  interviewerName String
+  location        String? // room or meeting link
+  status          InterviewStatus @default(SCHEDULED)
+  feedbackNotes   String?         @db.Text
+  scheduledById   String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledBy User        @relation("InterviewScheduler", fields: [scheduledById], references: [id])
+
+  @@index([applicationId])
+  @@index([scheduledAt])
+  @@index([status])
+}
